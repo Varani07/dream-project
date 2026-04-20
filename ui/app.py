@@ -62,7 +62,9 @@ class GameRunning(BaseScreen):
         self.info.atualizar(self.world, "mundo")
 
     def action_save(self) -> None:
+        self.notify("Salvando jogo...")
         self.world.parent = salvar_jogo(self.world) # type: ignore
+        self.notify("Jogo salvo!")
 
     def on_button_pressed(self, event):
         if event.button.id.startswith("cell"):
