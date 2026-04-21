@@ -93,7 +93,11 @@ def salvar_jogo(jogo:World) -> str:
             dicio['local_atual'] = obj.local_atual
             dicio['dentro_local'] = obj.dentro_local
             dicio['info_local_atual'] = to_dict(obj.info_local_atual, True)
-            dicio['locais_conhecidos'] = [to_dict(local_conhecido, True) for local_conhecido in obj.locais_conhecidos]
+            dicio['locais_conhecidos'] = [
+                to_dict(lc, True)
+                for local_conhecido in obj.locais_conhecidos.values()
+                for lc in local_conhecido.values()
+            ]
             npcs.append(dicio)
 
     to_dict(jogo)
