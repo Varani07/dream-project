@@ -4,12 +4,12 @@ from core.world import local as l
 from core.npc.npc import Npc
 
 from utils.tempo import formato_save
+from utils.file_management import save_write_json
 
 from datetime import datetime
 from pathlib import Path
-import json
 
-def salvar_jogo(jogo:World) -> str:
+def salvar_jogo(jogo:World) -> None:
     agora = formato_save(datetime.now())
     BASE_PATH = Path(f"data/saves/{jogo.id}/{agora}")
     (BASE_PATH).mkdir(parents=True, exist_ok=True)
@@ -22,13 +22,18 @@ def salvar_jogo(jogo:World) -> str:
 
     def dict_to_file(conteudo:dict|list, nome_arquivo:str) -> None:
         path = (BASE_PATH/nome_arquivo)
-        with path.open("w", encoding="utf-8") as f:
-            json.dump(conteudo, f, indent=4, ensure_ascii=False)
+        save_write_json(path, "w", conteudo)
 
     def meta(id:str, parente:str|None) -> None:
         dicio = dict()
         dicio['id'] = id
         dicio['parent'] = str(parente)
+
+        player = jogo.main_player()
+        dicio['player'] = player.nome
+        dicio['nivel'] = player.nivel
+        dicio['local'] = player.info_local_atual.__class__.__name__
+
         dict_to_file(dicio, "meta.json")
 
     def to_dict(obj, retorno=False):
@@ -101,6 +106,7 @@ def salvar_jogo(jogo:World) -> str:
             npcs.append(dicio)
 
     to_dict(jogo)
+    jogo.parent = agora # type: ignore
 
     if len(regioes) > 0:
         dict_to_file(regioes, "regioes.json")
@@ -112,5 +118,3 @@ def salvar_jogo(jogo:World) -> str:
         dict_to_file(lojas, "lojas.json")
     if len(npcs) > 0:
         dict_to_file(npcs, "npcs.json")
-
-    return agora
