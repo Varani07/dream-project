@@ -13,5 +13,5 @@ def get_json_files(path) -> dict:
     dicio = {}
     for file in path.iterdir():
         with file.open('r', encoding="utf-8") as f:
-            dicio[f.name] = json.load(f)
+            dicio[file.name] = json.load(f)
     return dicio

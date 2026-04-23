@@ -15,9 +15,7 @@ def salvar_jogo(jogo:World) -> None:
     (BASE_PATH).mkdir(parents=True, exist_ok=True)
 
     regioes = []
-    residencias = []
-    apartamentos = []
-    lojas = []
+    locais = {}
     npcs = []
 
     def dict_to_file(conteudo:dict|list, nome_arquivo:str) -> None:
@@ -26,9 +24,7 @@ def salvar_jogo(jogo:World) -> None:
 
     def meta(id:str, parente:str|None) -> None:
         dicio = dict()
-        dicio['id'] = id
         dicio['parent'] = str(parente)
-
         player = jogo.main_player()
         dicio['player'] = player.nome
         dicio['nivel'] = player.nivel
@@ -59,26 +55,15 @@ def salvar_jogo(jogo:World) -> None:
             dicio['possibilidades'] = [(possibilidade[0].__name__, possibilidade[1]) for possibilidade in obj.possibilidades]
             dicio['num_locais'] = obj.num_locais
             regioes.append(dicio)
+            locais[obj.nome] = []
             for local in obj.locais:
                 to_dict(local)
-        elif isinstance(obj, l.Residencia):
-            dicio['nome_regiao'] = obj.nome_regiao
-            dicio['xy'] = obj.xy
+        elif isinstance(obj, (l.Residencia, l.Apartamento, l.Loja)):
+            dicio['classe'] = obj.__class__.__name__
+            dicio.update({"nome_regiao": obj.nome_regiao, "xy": obj.xy})
             if retorno:
                 return dicio
-            residencias.append(dicio)
-        elif isinstance(obj, l.Apartamento):
-            dicio['nome_regiao'] = obj.nome_regiao
-            dicio['xy'] = obj.xy
-            if retorno:
-                return dicio
-            apartamentos.append(dicio)
-        elif isinstance(obj, l.Loja):
-            dicio['nome_regiao'] = obj.nome_regiao
-            dicio['xy'] = obj.xy
-            if retorno:
-                return dicio
-            lojas.append(dicio)
+            locais[obj.nome_regiao].append(dicio)
         elif isinstance(obj, Npc):
             dicio['id'] = obj.id
             dicio['nome'] = obj.nome
@@ -108,13 +93,6 @@ def salvar_jogo(jogo:World) -> None:
     to_dict(jogo)
     jogo.parent = agora # type: ignore
 
-    if len(regioes) > 0:
-        dict_to_file(regioes, "regioes.json")
-    if len(residencias) > 0:
-        dict_to_file(residencias, "residencias.json")
-    if len(apartamentos) > 0:
-        dict_to_file(apartamentos, "apartamentos.json")
-    if len(lojas) > 0:
-        dict_to_file(lojas, "lojas.json")
-    if len(npcs) > 0:
-        dict_to_file(npcs, "npcs.json")
+    dict_to_file(regioes, "regioes.json")
+    dict_to_file(locais, "locais.json")
+    dict_to_file(npcs, "npcs.json")

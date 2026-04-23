@@ -203,12 +203,12 @@ class LoadGame(BaseScreen):
                     node_b = node_a.add(formato_data(save_name))
                 else:
                     node_pai = dicio[meta['parent']]
-                    node_save = node_pai.add("Saves")
-                    node_b = node_save.add(formato_data(save_name))
-                dicio[save_name] = node_b
+                    node_b = node_pai.add(formato_data(save_name))
                 node_b.add(f"Player: {meta['player']}", data={"game": game_name, "save": save_name})
                 node_b.add(f"Nível: {meta['nivel']}")
                 node_b.add(f"Local: {meta['local']}")
+                node_saves = node_b.add("Saves")
+                dicio[save_name] = node_saves
         tree.root.expand_all()
         yield tree
 
@@ -218,8 +218,10 @@ class LoadGame(BaseScreen):
         data = node.data
 
         if data:
+            self.notify("Carregando save...")
             save = load_game(data['game'], data['save'])
-            self.notify(str(data))
+            self.app.push_screen(GameRunning(save))
+            self.notify("Save carregado.")
 
 
 class MenuInicial(BaseScreen):

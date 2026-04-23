@@ -25,3 +25,10 @@ class Regiao():
         inst.gerar_locais()
         return inst
     
+    def get_local(self, xy:tuple):
+        local = next(
+            (l for l in self.locais if l.xy == xy),
+            None
+        )
+        return local
+    
