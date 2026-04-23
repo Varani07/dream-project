@@ -204,7 +204,7 @@ class LoadGame(BaseScreen):
                 else:
                     node_pai = dicio[meta['parent']]
                     node_b = node_pai.add(formato_data(save_name))
-                node_b.add(f"Player: {meta['player']}", data={"game": game_name, "save": save_name})
+                node_b.add(f"[green]Player: {meta['player']}[/]", data={"game": game_name, "save": save_name})
                 node_b.add(f"Nível: {meta['nivel']}")
                 node_b.add(f"Local: {meta['local']}")
                 node_saves = node_b.add("Saves")
