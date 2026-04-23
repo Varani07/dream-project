@@ -48,3 +48,9 @@ class World():
                 return npc
         return npc # type: ignore
 
+    def get_regiao(self, nome_regiao:str) -> Regiao:
+        regiao = next(
+            (r for r in self.regioes if r.nome == nome_regiao),
+            None
+        )
+        return regiao # type: ignore

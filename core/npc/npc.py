@@ -41,7 +41,7 @@ class Npc():
         self.locais_conhecidos = dict()
 
     def alternar_local(self, local):
-        self.locais_conhecidos[local.nome_regiao].update({local.xy: local})
+        self.locais_conhecidos.setdefault(local.nome_regiao, {}).update({local.xy: local})
         self.info_local_atual = local
         self.local_atual = local.xy
 

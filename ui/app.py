@@ -1,12 +1,17 @@
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header
 from textual.screen import Screen
-from textual.widgets import Button, Input, DataTable
+from textual.widgets import Button, Input, DataTable, Tree
 from textual.containers import Grid, Horizontal, Vertical
+from textual import on
 
 from core.npc.npc import Npc
 from core.world.world import World
+
 from data.save_manager import salvar_jogo
+from data.load_manager import get_saves, load_game
+
+from utils.tempo import formato_data, formato_datetime
 
 
 class BaseScreen(Screen):
@@ -23,7 +28,7 @@ class GameRunning(BaseScreen):
     BINDINGS = [
         ("d", "toogle_dark", "Toggle dark mode"), 
         ("q", "sair", "Sair"),
-        ("b", "back", "Voltar"),
+        ("h", "home", "Home"),
         ("m", "mapa", "Mapa"),
         ("s", "save", "Salvar")
     ]
@@ -55,15 +60,12 @@ class GameRunning(BaseScreen):
             self.barra
         )
 
-    def action_back(self) -> None:
-        self.app.push_screen(MenuInicial())
-
     def action_mapa(self) -> None:
         self.info.atualizar(self.world, "mundo")
 
     def action_save(self) -> None:
         self.notify("Salvando jogo...")
-        self.world.parent = salvar_jogo(self.world) # type: ignore
+        salvar_jogo(self.world) # type: ignore
         self.notify("Jogo salvo!")
 
     def on_button_pressed(self, event):
@@ -168,6 +170,9 @@ class MiniMapa(Grid):
 
 
 class CriarPlayer(BaseScreen):
+    def __init__(self):
+        super().__init__()
+
     def compose_body(self):
         yield Input(placeholder="Player: ", max_length=25)
 
@@ -178,6 +183,45 @@ class CriarPlayer(BaseScreen):
         else:
             world = World.mundo_inicial(Npc(nome))
             self.app.push_screen(GameRunning(world))
+
+
+class LoadGame(BaseScreen):
+    def __init__(self, saves):
+        super().__init__()                                                    
+        self.saves = saves
+        self.notify("Selecione um player.")
+
+    def compose_body(self):
+        tree = Tree("Saves")
+        tree.can_focus = False
+        root = tree.root
+        for game_name, game in self.saves.items():
+            node_a = root.add(game_name)
+            dicio = {}
+            for save_name, meta in sorted(game.items(), key=lambda x: formato_datetime(x[0]), reverse=False):
+                if meta['parent'] == "None":
+                    node_b = node_a.add(formato_data(save_name))
+                else:
+                    node_pai = dicio[meta['parent']]
+                    node_b = node_pai.add(formato_data(save_name))
+                node_b.add(f"Player: {meta['player']}", data={"game": game_name, "save": save_name})
+                node_b.add(f"Nível: {meta['nivel']}")
+                node_b.add(f"Local: {meta['local']}")
+                node_saves = node_b.add("Saves")
+                dicio[save_name] = node_saves
+        tree.root.expand_all()
+        yield tree
+
+    @on(Tree.NodeSelected)
+    def on_tree_node_selected(self, event: Tree.NodeSelected):
+        node = event.node
+        data = node.data
+
+        if data:
+            self.notify("Carregando save...")
+            save = load_game(data['game'], data['save'])
+            self.app.push_screen(GameRunning(save))
+            self.notify("Save carregado.")
 
 
 class MenuInicial(BaseScreen):
@@ -193,14 +237,17 @@ class MenuInicial(BaseScreen):
         if event.button.id == "new_game":
             self.app.push_screen(CriarPlayer())
         elif event.button.id == "load_game":
-            pass
-        elif event.button.id == "voltar":
-            pass
+            saves = get_saves()
+            if len(saves) < 1:
+                self.notify("Nenhum save disponível.")
+            else:
+                self.app.push_screen(LoadGame(saves))
 
 
 class GameApp(App):
     BINDINGS = [
         ("d", "toogle_dark", "Toggle dark mode"), 
+        ("h", "home", "Home"),
         ("q", "sair", "Sair")
     ]
 
@@ -211,6 +258,9 @@ class GameApp(App):
 
     def action_sair(self) -> None:
         self.app.exit()
+
+    def action_home(self) -> None:
+        self.app.push_screen(MenuInicial())
 
     def on_mount(self) -> None:
         self.push_screen(MenuInicial())
