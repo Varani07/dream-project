@@ -66,7 +66,7 @@ def class_npcs(npcs:dict, world:World) -> None:
         npc.energia = npc_dict['energia']
         npc.energia_cap = npc_dict['energia_cap']
         npc.exp = npc_dict['exp']
-        npc.energia_cap = npc_dict['exp_cap']
+        npc.exp_cap = npc_dict['exp_cap']
         npc.dinheiro = npc_dict['dinheiro']
         npc.fome = npc_dict['fome']
         npc.sede = npc_dict['sede']
