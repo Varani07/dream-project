@@ -1,7 +1,6 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Header
-from textual.screen import Screen
-from textual.widgets import Button, Input, DataTable, Tree
+from textual.widgets import Footer, Header, Static, Button, Input, DataTable, Tree
+from textual.screen import Screen, ModalScreen
 from textual.containers import Grid, Horizontal, Vertical
 from textual import on
 
@@ -12,6 +11,30 @@ from data.save_manager import salvar_jogo
 from data.load_manager import get_saves, load_game
 
 from utils.tempo import formato_data, formato_datetime
+
+import shutil
+from pathlib import Path
+
+
+class ConfirmDialog(ModalScreen[bool]):
+    def __init__(self, conteudo:str, positiva:str="Sim", negativa:str="Não") -> None:
+        super().__init__()
+        self.conteudo = conteudo
+        self.positiva = positiva
+        self.negativa = negativa
+
+    def compose(self):
+        yield Vertical(
+            Static(self.conteudo),
+            formatar_botao(Button(self.positiva, id="yes")),
+            formatar_botao(Button(self.negativa, id="no"))
+        )
+
+    def on_button_pressed(self, event: Button.Pressed):
+        if event.button.id == "yes":
+            self.dismiss(True)
+        else:
+            self.dismiss(False)
 
 
 class BaseScreen(Screen):
@@ -88,7 +111,6 @@ class GameRunning(BaseScreen):
             else:
                 botao_antigo.label = "o" # type: ignore
 
-            # novo
             botao_novo.label = "[red]x[/]" # type: ignore
 
             self.info.atualizar(self.local, "local")
@@ -189,49 +211,74 @@ class LoadGame(BaseScreen):
     def __init__(self, saves):
         super().__init__()                                                    
         self.saves = saves
-        self.notify("Selecione um player.")
 
     def compose_body(self):
-        tree = Tree("Saves")
-        tree.can_focus = False
+        yield formatar_tree(Tree("Saves", id="tree"))
+
+    def on_mount(self) -> None:
+        self.build_tree()
+
+    def build_tree(self) -> None:
+        self.dicio = {}
+        self.children_saves = {}
+
+        tree = self.query_one('#tree', Tree)
+        tree.clear()
         root = tree.root
+        self.build_tree_nodes(root)
+        root.expand_all()
+
+    def build_tree_nodes(self, root) -> None:
         for game_name, game in self.saves.items():
             node_a = root.add(game_name)
-            dicio = {}
+            self.children_saves[game_name] = {}
             for save_name, meta in sorted(game.items(), key=lambda x: formato_datetime(x[0]), reverse=False):
+                self.children_saves[game_name][save_name] = []
                 if meta['parent'] == "None":
                     node_b = node_a.add(formato_data(save_name))
                 else:
-                    node_pai = dicio[meta['parent']]
+                    node_pai = self.dicio[meta['parent']]
                     node_b = node_pai.add(formato_data(save_name))
+                    self.children_saves[game_name][meta['parent']].append(save_name)
                 node_b.add(f"[green]Player: {meta['player']}[/]", data={"game": game_name, "save": save_name})
                 node_b.add(f"Nível: {meta['nivel']}")
                 node_b.add(f"Local: {meta['local']}")
+                node_b.add("[red]Deletar save[/]", data={"game": game_name, "save": save_name})
                 node_saves = node_b.add("Saves")
-                dicio[save_name] = node_saves
-        tree.root.expand_all()
-        yield tree
+                self.dicio[save_name] = node_saves
 
     @on(Tree.NodeSelected)
     def on_tree_node_selected(self, event: Tree.NodeSelected):
         node = event.node
         data = node.data
-
         if data:
-            self.notify("Carregando save...")
-            save = load_game(data['game'], data['save'])
-            self.app.push_screen(GameRunning(save))
-            self.notify("Save carregado.")
+            game = data['game']
+            save = data['save']
+            if str(node.label) == "Deletar save":
+                def resposta(result:bool):
+                    if result:
+                        save_and_children = self.children_saves[game]
+                        def apagar_saves(nome_save:str, children:list):
+                            for child in children:
+                                apagar_saves(child, save_and_children.get(child, []))
+                            shutil.rmtree(f"data/saves/{game}/{nome_save}")
+                        apagar_saves(save, save_and_children[save])
+                    if not any(Path(f"data/saves/{game}").iterdir()):
+                        shutil.rmtree(f"data/saves/{game}")
+                    self.saves = get_saves()
+                    self.build_tree()
+                self.app.push_screen(ConfirmDialog("Deseja deletar save? (Deleta todos os saves subsequentes)"), resposta) # type: ignore
+            else:
+                self.notify("Carregando save...")
+                load_save = load_game(game, save)
+                self.app.push_screen(GameRunning(load_save))
+                self.notify("Save carregado.")
 
 
 class MenuInicial(BaseScreen):
     def compose_body(self):
-        botoes = [
-            Button("Novo Jogo", id="new_game"),
-            Button("Carregar Jogo", id="load_game")
-        ]
-        for botao in botoes:
-            yield formatar_botao(botao)
+        yield formatar_botao(Button("Novo Jogo", id="new_game"))
+        yield formatar_botao(Button("Carregar Jogo", id="load_game"))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "new_game":
@@ -270,3 +317,7 @@ def formatar_botao(botao:Button) -> Button:
     botao.styles.background = "transparent"
     botao.can_focus = False
     return botao
+
+def formatar_tree(tree:Tree) -> Tree:
+    tree.can_focus = False
+    return tree
