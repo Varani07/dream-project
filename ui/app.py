@@ -6,6 +6,7 @@ from textual import on
 
 from core.npc.npc import Npc
 from core.world.world import World
+from core.world.local import Local
 
 from data.save_manager import salvar_jogo
 from data.load_manager import get_saves, load_game
@@ -60,120 +61,139 @@ class GameRunning(BaseScreen):
         super().__init__()
         self.world = mundo
         self.player = self.world.main_player()
+
         nome_regiao = self.player.info_local_atual.nome_regiao # type: ignore
-        for regiao in self.world.regioes:
-            if nome_regiao == regiao.nome:
-                self.regiao = regiao
-                break
-        self.locais = {local.xy: local for local in self.regiao.locais}
+        self.regiao = next(
+            (r for r in self.world.regioes if r.nome == nome_regiao),
+            None
+        )
+
+        self.locais = {local.xy: local for local in self.regiao.locais} # type: ignore
 
     def compose_body(self):
-        self.mapa = MiniMapa(self.regiao.num_locais, [loc for loc in self.player.get_locais_conhecidos.keys()], self.player.local_atual) # type: ignore
-        self.info = Info(self.player, "player")
-        self.barra = Horizontal(
-            formatar_botao(Button("Player", id="player"))
-        )
-        self.barra.styles.height = 3
-        
         yield Vertical(
             Horizontal(
-                self.mapa,
-                self.info
+                MiniMapa(
+                    self.regiao.num_locais, # type: ignore
+                    list(self.player.get_locais_conhecidos.keys()),
+                    self.player.local_atual,
+                    id="mapa"
+                ),
+                Info(self.player, id="info")
             ),
-            self.barra
+            Horizontal(
+                formatar_botao(Button("Player", id="player")),
+                id="barra"
+            )
         )
 
+    def on_mount(self):
+        self.mapa = self.query_one("#mapa", MiniMapa)
+        self.info = self.query_one("#info", Info)
+        self.barra = self.query_one("#barra", Horizontal)
+
+        self.barra.styles.height = 3
+
     def action_mapa(self) -> None:
-        self.info.atualizar(self.world, "mundo")
+        self.info.atualizar(self.world)
 
     def action_save(self) -> None:
-        self.notify("Salvando jogo...")
         salvar_jogo(self.world) # type: ignore
         self.notify("Jogo salvo!")
 
     def on_button_pressed(self, event):
         if event.button.id.startswith("cell"):
-            _, x, y = event.button.id.split("_")
-            x = int(x)
-            y = int(y)
-
-            self.local = self.locais.get((x,y))
-
-            pos_antiga = self.player.local_atual
-            self.player.alternar_local(self.local)
-            pos_nova = self.player.local_atual
-
-            botao_antigo = self.query_one(f"#cell_{pos_antiga[0]}_{pos_antiga[1]}") # type: ignore
-            botao_novo = self.query_one(f"#cell_{pos_nova[0]}_{pos_nova[1]}") # type: ignore
-
-            if pos_antiga in [loc for loc in self.player.get_locais_conhecidos.keys()]:
-                botao_antigo.label = "[blue]*[/]" # type: ignore
-            else:
-                botao_antigo.label = "o" # type: ignore
-
-            botao_novo.label = "[red]x[/]" # type: ignore
-
-            self.info.atualizar(self.local, "local")
+            self.handle_cell_click(event.button.id)
         elif event.button.id == "player":
-            self.info.atualizar(self.player, "player")
+            self.info.atualizar(self.player)
+            
+    def handle_cell_click(self, button_id:str):
+        _, x, y = button_id.split("_")
+        x, y = int(x), int(y)
+
+        self.local = self.locais.get((x, y))
+
+        self.player.alternar_local(self.local)
+
+        self.mapa.atualizar(
+            self.player.get_locais_conhecidos.keys(),
+            self.player.local_atual
+        )
+        self.info.atualizar(self.local)
         
 
 class Info(DataTable):
-    def __init__(self, obj, tipo_obj):
-        super().__init__()
+    def __init__(self, obj, id):
+        super().__init__(id=id)
         self.obj = obj
-        self.tipo_obj = tipo_obj
 
     def on_mount(self):
         self.add_columns("Atributo", "Valor")
-        self.atualizar(self.obj, self.tipo_obj)
+        self.atualizar(self.obj)
 
-    def atualizar(self, obj, tipo_obj):
+    def atualizar(self, obj):
         self.clear()
 
-        if tipo_obj not in ["mundo", "local"]:
-            match tipo_obj:
-                case "player":
-                    dict_obj = {
-                        "nome": ["[blue]Nome[/]", 1], 
-                        "nivel": ["[blue]Nivel[/]", 1], 
-                        "npc": ["[blue]NPC[/]", 1],
-                        "dinheiro": ["[blue]Dinheiro[/]", 1],
-                        "energia": ["[green]Energia[/]", 2], 
-                        "exp": ["[green]Exp[/]", 2],
-                        "fome": ["[yellow]Fome[/]", 1], 
-                        "sede": ["[yellow]Sede[/]", 1], 
-                        "fadiga": ["[red]Fadiga[/]", 1], 
-                        "sorte": ["[cyan]Sorte[/]", 1], 
-                        "forca": ["[cyan]Força[/]", 1], 
-                        "fit": ["[cyan]Fit[/]", 1]
-                    }
-            for chave, valor in dict_obj.items(): # type: ignore
-                match valor[1]:
-                    case 1:
-                        atributo = getattr(obj, chave)
-                        self.add_row(valor[0], str(atributo))
-                    case 2:
-                        atributo = getattr(obj, chave)
-                        atributo_adc = getattr(obj, f"{chave}_cap")
-                        self.add_row(valor[0], f"{atributo}/{atributo_adc}")
-        else:
-            match tipo_obj:
-                case "mundo":
-                    self.add_row("Nome", obj.nome)
-                    for regiao in obj.regioes:
-                        for local in regiao.locais:
-                            self.add_row(f"{regiao.nome} {local.xy}", local.__class__.__name__)
-                case "local":
-                    self.add_row(f"Local {obj.xy}", obj.__class__.__name__)
+        if isinstance(obj, Npc):
+            self._render_player(obj)
+        elif isinstance(obj, World):
+            self._render_mundo(obj)
+        elif isinstance(obj, Local):
+            self._render_local(obj)
+
+    def _render_player(self, obj):
+        campos = {
+            "nome": ("[blue]Nome[/]", 1), 
+            "nivel": ("[blue]Nivel[/]", 1), 
+            "npc": ("[blue]NPC[/]", 1),
+            "dinheiro": ("[blue]Dinheiro[/]", 1),
+
+            "energia": ("[green]Energia[/]", 2), 
+            "exp": ("[green]Exp[/]", 2),
+
+            "fome": ("[yellow]Fome[/]", 1), 
+            "sede": ("[yellow]Sede[/]", 1),
+
+            "fadiga": ("[red]Fadiga[/]", 1),
+
+            "sorte": ("[cyan]Sorte[/]", 1), 
+            "forca": ("[cyan]Força[/]", 1), 
+            "fit": ("[cyan]Fit[/]", 1)
+        }
+        for attr, (label, tipo) in campos.items():
+            valor = getattr(obj, attr)
+
+            if tipo == 1:
+                self.add_row(label, str(valor))
+            elif tipo == 2:
+                cap = getattr(obj, f"{attr}_cap")
+                self.add_row(label, f"{valor}/{cap}")
+
+    def _render_mundo(self, obj):
+        self.add_row("Nome", obj.nome)
+
+        for regiao in obj.regioes:
+            for local in regiao.locais:
+                self.add_row(
+                    f"{regiao.nome} {local.xy}",
+                    local.__class__.__name__
+                )
+
+    def _render_local(self, obj):
+        self.add_row(
+            f"Local {obj.xy}",
+            obj.__class__.__name__
+        )
 
 
 class MiniMapa(Grid):
-    def __init__(self, xy, pontos_conhecidos, localizacao_atual):
-        super().__init__()
+    def __init__(self, xy, pontos_conhecidos, localizacao_atual, id):
+        super().__init__(id=id)
+
         self.xy = xy
         self.localizacao_atual = localizacao_atual
         self.pontos_conhecidos = pontos_conhecidos
+
         self.styles.grid_size_columns = xy[0]
         self.styles.grid_size_rows = xy[1]
         self.styles.grid_columns = ("6 " * xy[0]).strip()
@@ -182,13 +202,31 @@ class MiniMapa(Grid):
     def compose(self):
         for y in range(self.xy[1]):
             for x in range(self.xy[0]):
-                if (x,y) == self.localizacao_atual:
-                    botao = Button("[red]x[/]", id=f"cell_{x}_{y}")
-                elif (x,y) in self.pontos_conhecidos:
-                    botao = Button("[blue]*[/]", id=f"cell_{x}_{y}")
-                else:
-                    botao = Button("o", id=f"cell_{x}_{y}")
-                yield formatar_botao(botao)
+                yield self._criar_botao(x, y)
+
+    def _criar_botao(self, x, y):
+        label = self.criar_label(x, y)
+        
+        return formatar_botao(Button(label, id=f"cell_{x}_{y}"))
+    
+    def atualizar(self, pontos_conhecidos, localizacao_atual):
+        self.pontos_conhecidos = pontos_conhecidos
+        self.localizacao_atual = localizacao_atual
+
+        for y in range(self.xy[1]):
+            for x in range(self.xy[0]):
+                botao = self.query_one(f"#cell_{x}_{y}", Button)
+                botao.label = self.criar_label(x, y)
+
+    def criar_label(self, x, y) -> str:
+        if (x, y) == self.localizacao_atual:
+            label = "[red]x[/]"
+        elif (x, y) in self.pontos_conhecidos:
+            label = "[blue]*[/]"
+        else:
+            label = "o"
+        
+        return label
 
 
 class CriarPlayer(BaseScreen):
@@ -272,7 +310,6 @@ class LoadGame(BaseScreen):
                 self.notify("Carregando save...")
                 load_save = load_game(game, save)
                 self.app.push_screen(GameRunning(load_save))
-                self.notify("Save carregado.")
 
 
 class MenuInicial(BaseScreen):
