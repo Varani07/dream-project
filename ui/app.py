@@ -235,6 +235,7 @@ class CriarPlayer(BaseScreen):
 
     def compose_body(self):
         yield Input(placeholder="Player: ", max_length=25)
+        yield formatar_botao(Button("Voltar", id="voltar"))
 
     def on_input_submitted(self, event: Input.Submitted):
         nome = event.value.strip()
@@ -243,6 +244,11 @@ class CriarPlayer(BaseScreen):
         else:
             world = World.mundo_inicial(Npc(nome))
             self.app.push_screen(GameRunning(world))
+
+    def on_button_pressed(self, event: Button.Pressed):
+        button_id = event.button.id
+        if button_id == "voltar":
+            self.app.push_screen(MenuInicial())
 
 
 class LoadGame(BaseScreen):
