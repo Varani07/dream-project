@@ -1,0 +1,22 @@
+# Tarefas Core / Mundo e Tempo
+1. Consolidar as classes `World`, `Region` e `Local`, permitindo conectá-las em um sistema navegável.
+2. Criar a UI em `textual` que mostre uma `Region` e seus `Locais` no formato de células (Grid).
+3. Implementar o consumo de Energia e a mecânica de descobrimento de novos `Locais` no mapa.
+4. Implementar o Controlador de Tempo de Ação: o relógio mundial gira até terminar a duração da ação do jogador.
+5. Criar o Sistema de Interrupção de Ações: se um evento acontece com o jogador no meio de uma ação, a passagem do tempo para.
+6. Estruturar a classe base `Character/Entity` unificando NPCs e Player (facilitar a Troca de Protagonista).
+
+# Tarefas Mundo Vivo & Rotinas
+7. Desenvolver a lógica de "Simulação de Fundo" (calcular rotinas por matemática para economizar processamento de NPCs distantes).
+8. Criar lista de Tarefas/Rotinas diárias que NPCs executam nos locais sozinhos (Trabalhar na Forja, ir para a Taverna, Dormir).
+
+# Tarefas Memórias e Interações com LLM Local
+9. Estruturar o sistema base de Memórias e Fatos nas Entidades (Tags, Afinidade).
+10. Criar o gerenciador de filas Assíncronas (asyncio) para que qualquer chamada para o LLM não trave a interface textual.
+11. Implementar um gerador de Prompts que traduza o estado atual do mundo e da memória do NPC em instruções para o modelo LLM local.
+12. Construir uma lógica seletiva para a IA: determinar quais diálogos (cruciais/fofocas de grandes eventos) devem acionar o LLM e quais podem usar texto pré-definido.
+
+# Tarefas UI Textual
+13. Construir as Views para Ações do Jogador (Descansar, Trabalhar, Viajar) com indicação do tempo e energia.
+14. Criar o "Log do Mundo" onde as interações, diálogos (gerados pela IA) e eventos são narrados para o jogador.
+15. Painel de status mostrando Energia, Local atual e as características do personagem possuído no momento.
