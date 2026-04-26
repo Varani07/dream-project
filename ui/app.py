@@ -26,9 +26,10 @@ class ConfirmDialog(ModalScreen[bool]):
 
     def compose(self):
         yield Vertical(
-            Static(self.conteudo),
+            Static(self.conteudo, id="dialog_content"),
             formatar_botao(Button(self.positiva, id="yes")),
-            formatar_botao(Button(self.negativa, id="no"))
+            formatar_botao(Button(self.negativa, id="no")),
+            id="dialog_container"
         )
 
     def on_button_pressed(self, event: Button.Pressed):
@@ -40,9 +41,9 @@ class ConfirmDialog(ModalScreen[bool]):
 
 class BaseScreen(Screen):
     def compose(self) -> ComposeResult:
-        yield Header()
+        yield Header(id="header")
         yield from self.compose_body()
-        yield Footer()
+        yield Footer(id="footer")
 
     def compose_body(self) -> ComposeResult:
         yield from ()
@@ -79,20 +80,20 @@ class GameRunning(BaseScreen):
                     self.player.local_atual,
                     id="mapa"
                 ),
-                Info(self.player, id="info")
+                Info(self.player, id="info"),
+                id="game_top_horizontal"
             ),
             Horizontal(
                 formatar_botao(Button("Player", id="player")),
                 id="barra"
-            )
+            ),
+            id="game_running_vertical"
         )
 
     def on_mount(self):
         self.mapa = self.query_one("#mapa", MiniMapa)
         self.info = self.query_one("#info", Info)
         self.barra = self.query_one("#barra", Horizontal)
-
-        self.barra.styles.height = 3
 
     def action_mapa(self) -> None:
         self.info.atualizar(self.world)
@@ -234,7 +235,7 @@ class CriarPlayer(BaseScreen):
         super().__init__()
 
     def compose_body(self):
-        yield Input(placeholder="Player: ", max_length=25)
+        yield Input(placeholder="Player: ", max_length=25, id="input_player_name")
         yield formatar_botao(Button("Voltar", id="voltar"))
 
     def on_input_submitted(self, event: Input.Submitted):
@@ -335,6 +336,7 @@ class MenuInicial(BaseScreen):
 
 
 class GameApp(App):
+    CSS_PATH = "styles/app.tcss"
     BINDINGS = [
         ("d", "toogle_dark", "Toggle dark mode"), 
         ("h", "home", "Home"),

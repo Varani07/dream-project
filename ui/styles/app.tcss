@@ -1,0 +1,85 @@
+/* Estilos básicos globais */
+Screen {
+    background: $surface;
+    color: $text;
+}
+
+#header {
+    dock: top;
+}
+
+#footer {
+    dock: bottom;
+}
+
+/* Modais e Diálogos */
+#dialog_container {
+    width: 60;
+    height: 15;
+    border: solid $accent;
+    background: $panel;
+    content-align: center middle;
+    align: center middle;
+}
+
+#dialog_content {
+    content-align: center middle;
+    margin-bottom: 2;
+}
+
+#yes, #no {
+    width: 100%;
+}
+
+/* Tela GameRunning */
+#game_running_vertical {
+    height: 100%;
+}
+
+#game_top_horizontal {
+    height: 1fr;
+}
+
+#mapa {
+    width: 60%;
+    border: round $primary;
+}
+
+#info {
+    width: 40%;
+    border: round $secondary;
+}
+
+#barra {
+    dock: bottom;
+    height: auto;
+    border-top: solid $primary;
+    padding: 1;
+}
+
+#player {
+    width: 20%;
+}
+
+/* Criar Player */
+#input_player_name {
+    margin: 2;
+    border: wide $accent;
+}
+
+#voltar {
+    margin-left: 2;
+}
+
+/* Menus */
+#new_game, #load_game {
+    width: 50;
+    margin: 1;
+    content-align: center middle;
+}
+
+#tree {
+    border: solid $success;
+    height: 1fr;
+    margin: 1;
+}
