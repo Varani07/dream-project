@@ -1,6 +1,5 @@
-from ui.app import GameApp
+from ui import GameApp
 
 
 if __name__ == "__main__":
-    app = GameApp()
-    app.run()
+    GameApp().run()

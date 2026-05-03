@@ -1,98 +1,79 @@
-from core.world.world import World
-from core.world.regiao import Regiao
-from core.world import local as l
-from core.npc.npc import Npc
-
-from utils.tempo import formato_save
-from utils.file_management import save_write_json
-
+from dataclasses import asdict, is_dataclass
 from datetime import datetime
 from pathlib import Path
 
-def salvar_jogo(jogo:World) -> None:
-    agora = formato_save(datetime.now())
-    BASE_PATH = Path(f"data/saves/{jogo.id}/{agora}")
-    (BASE_PATH).mkdir(parents=True, exist_ok=True)
+from core.world.world import World
+from core.entity.entity import Entity
+from core.entity.components import LocalizacaoComponent
+from utils.tempo import formato_save
+from utils.files import write_json
 
-    regioes = []
-    locais = {}
-    npcs = []
 
-    def dict_to_file(conteudo:dict|list, nome_arquivo:str) -> None:
-        path = (BASE_PATH/nome_arquivo)
-        save_write_json(path, "w", conteudo)
+SCHEMA_VERSION: int = 1
+_COMPONENTES_TRANSIENTES: set[str] = set()
 
-    def meta(id:str, parente:str|None) -> None:
-        dicio = dict()
-        dicio['parent'] = str(parente)
-        player = jogo.main_player()
-        dicio['player'] = player.nome
-        dicio['nivel'] = player.nivel
-        dicio['local'] = player.info_local_atual.__class__.__name__
 
-        dict_to_file(dicio, "meta.json")
+def _normalize_for_json(cls_name: str, data: dict) -> dict:
+    if cls_name == "LocalizacaoComponent" and "xy" in data:
+        return {**data, "xy": list(data["xy"])}
+    return data
 
-    def to_dict(obj, retorno=False):
-        dicio = dict()
-        if isinstance(obj, World):
-            dicio['id'] = obj.id
-            dicio['nome'] = obj.nome
-            for regiao in obj.regioes:
-                to_dict(regiao)
-            for npc in obj.npcs:
-                to_dict(npc)
-            dicio['ano'] = obj.tempo.year
-            dicio['mes'] = obj.tempo.month
-            dicio['dia'] = obj.tempo.day
-            dicio['hora'] = obj.tempo.hour
-            dicio['minuto'] = obj.tempo.minute
+def _entity_to_dict(entity: Entity) -> dict:
+    comps_dict: dict[str, dict] = {}
+    for cls_name, comp in entity.all_components().items():
+        if cls_name in _COMPONENTES_TRANSIENTES:
+            continue
+        if is_dataclass(comp):
+            data = asdict(comp)
+        else:
+            data = dict(comp.__dict__)
+        data = _normalize_for_json(cls_name, data)
+        comps_dict[cls_name] = data
+    return {
+        "id": entity.id,
+        "nome": entity.nome,
+        "components": comps_dict,
+    }
 
-            meta(agora, obj.parent)
-            dict_to_file(dicio, "world.json")
-        elif isinstance(obj, Regiao):
-            dicio['nome'] = obj.nome
-            dicio['nome_mundo'] = obj.nome_mundo
-            dicio['possibilidades'] = [(possibilidade[0].__name__, possibilidade[1]) for possibilidade in obj.possibilidades]
-            dicio['num_locais'] = obj.num_locais
-            regioes.append(dicio)
-            locais[obj.nome] = []
-            for local in obj.locais:
-                to_dict(local)
-        elif isinstance(obj, (l.Residencia, l.Apartamento, l.Loja)):
-            dicio['classe'] = obj.__class__.__name__
-            dicio.update({"nome_regiao": obj.nome_regiao, "xy": obj.xy})
-            if retorno:
-                return dicio
-            locais[obj.nome_regiao].append(dicio)
-        elif isinstance(obj, Npc):
-            dicio['id'] = obj.id
-            dicio['nome'] = obj.nome
-            dicio['nivel'] = obj.nivel
-            dicio['npc'] = obj.npc
-            dicio['energia'] = obj.energia
-            dicio['energia_cap'] = obj.energia_cap
-            dicio['exp'] = obj.exp
-            dicio['exp_cap'] = obj.exp_cap
-            dicio['dinheiro'] = obj.dinheiro
-            dicio['fome'] = obj.fome
-            dicio['sede'] = obj.sede
-            dicio['fadiga'] = obj.fadiga
-            dicio['sorte'] = obj.sorte
-            dicio['forca'] = obj.forca
-            dicio['fit'] = obj.fit
-            dicio['local_atual'] = obj.local_atual
-            dicio['dentro_local'] = obj.dentro_local
-            dicio['info_local_atual'] = to_dict(obj.info_local_atual, True)
-            dicio['locais_conhecidos'] = [
-                to_dict(lc, True)
-                for local_conhecido in obj.locais_conhecidos.values()
-                for lc in local_conhecido.values()
-            ]
-            npcs.append(dicio)
+def salvar_jogo(world: World, base_dir: Path = Path("data/saves")) -> str:
+    timestamp = formato_save(datetime.now())
+    save_dir = base_dir / world.id / timestamp
+    save_dir.mkdir(parents=True, exist_ok=True)
 
-    to_dict(jogo)
-    jogo.parent = agora # type: ignore
+    # `meta.json` é o resumo barato — UI lê só isso para popular a lista
+    # de saves. Não inclua nada caro de calcular aqui.
+    player = world.main_player()
+    player_nome = player.nome if player else "—"
+    player_local_tipo = "—"
+    if player:
+        loc = player.get(LocalizacaoComponent)
+        if loc:
+            regiao = world.get_regiao(loc.regiao_nome)
+            local = regiao.get_local(loc.xy) if regiao else None
+            if local:
+                player_local_tipo = local.tipo
 
-    dict_to_file(regioes, "regioes.json")
-    dict_to_file(locais, "locais.json")
-    dict_to_file(npcs, "npcs.json")
+    meta = {
+        "schema_version": SCHEMA_VERSION,
+        "parent": world.parent_save,           # rastreia árvore de saves
+        "player": player_nome,
+        "local_tipo": player_local_tipo,
+        "tempo": world.tempo.isoformat(),       # datetime -> string ISO
+    }
+
+    world_data = {
+        "id": world.id,
+        "nome": world.nome,
+        "tempo": world.tempo.isoformat(),
+        "regioes": [r.to_dict() for r in world.regioes],
+    }
+
+    entities_data = [_entity_to_dict(e) for e in world.entities]
+
+    write_json(save_dir / "meta.json", meta)
+    write_json(save_dir / "world.json", world_data)
+    write_json(save_dir / "entities.json", entities_data)
+
+    # Próximo save terá este como pai.
+    world.parent_save = timestamp
+    return timestamp
