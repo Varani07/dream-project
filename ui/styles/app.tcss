@@ -1,0 +1,135 @@
+Screen {
+    background: $surface;
+    color: $text;
+}
+
+#header { dock: top; }
+#footer { dock: bottom; }
+
+/* MENU INICIAL */
+#menu_container {
+    align: center middle;
+    width: 60;
+    height: auto;
+    padding: 2;
+    border: round $primary;
+    background: $panel;
+}
+
+#titulo {
+    content-align: center middle;
+    text-style: bold;
+    color: $accent;
+    margin-bottom: 1;
+}
+
+#subtitulo {
+    content-align: center middle;
+    margin-bottom: 2;
+}
+
+#new_game, #load_game, #exit_game {
+    width: 100%;
+    height: 3;
+    margin: 1 0;
+    background: $primary 25%;
+    border: tall $primary 50%;
+    text-style: none;
+}
+
+#new_game:hover, #load_game:hover {
+    background: $primary 50%;
+    color: $text;
+    border: tall $primary 70%;
+}
+
+#new_game:focus, #load_game:focus {
+    background: $primary 50%;
+    color: $text;
+    text-style: bold;
+    border: tall $accent 80%;
+}
+
+#exit_game {
+    background: $error 30%;
+    border: tall $error 50%;
+}
+
+#exit_game:hover {
+    background: $error 50%;   
+    border: tall $error 70%;
+}
+
+#exit_game:focus {
+    background: $error 50%;
+    color: $text;
+    text-style: bold;
+    border: tall $accent 80%;
+}
+
+/* NOVO JOGO */
+#novo_jogo_container {
+    align: center middle;
+    width: 60;
+    height: auto;
+    padding: 2;
+    border: round $primary;
+    background: $panel;
+}
+
+#titulo_novo {
+    content-align: center middle;
+    text-style: bold;
+    color: $accent;
+    margin-bottom: 2;
+}
+
+#input_nome {
+    margin: 1 0;
+    border: tall $accent;
+}
+
+#iniciar, #voltar {
+    width: 100%;
+    height: 3;
+    margin: 1 0;
+    background: $primary 25%;
+    border: tall $primary 50%;
+    text-style: none;
+}
+
+#iniciar:hover, #voltar:hover {
+    background: $primary 50%;
+    color: $text;
+    border: tall $primary 70%;
+}
+
+#iniciar:focus, #voltar:focus {
+    background: $primary 50%;
+    color: $text;
+    text-style: bold;
+    border: tall $accent 80%;
+}
+
+/* GAME-RUNNING */
+#game_root {
+    width: 100%;
+    height: 100%;
+}
+
+#status {
+    height: 6;
+    border: round $primary;
+    padding: 0 1;
+}
+
+#barra_acoes {
+    height: 3;
+    margin: 1 0;
+}
+
+#log_mundo {
+    height: 1fr;          /* 1fr = "ocupa todo o espaço restante" */
+    border: round $primary;
+    padding: 0 1;
+}

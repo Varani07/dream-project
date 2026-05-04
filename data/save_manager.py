@@ -40,11 +40,8 @@ def salvar_jogo(world: World, base_dir: Path = Path("data/saves")) -> str:
     save_dir = base_dir / world.id / timestamp
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    # `meta.json` é o resumo barato — UI lê só isso para popular a lista
-    # de saves. Não inclua nada caro de calcular aqui.
     player = world.main_player()
-    player_nome = player.nome if player else "—"
-    player_local_tipo = "—"
+    assert player is not None
     if player:
         loc = player.get(LocalizacaoComponent)
         if loc:
@@ -55,10 +52,10 @@ def salvar_jogo(world: World, base_dir: Path = Path("data/saves")) -> str:
 
     meta = {
         "schema_version": SCHEMA_VERSION,
-        "parent": world.parent_save,           # rastreia árvore de saves
-        "player": player_nome,
+        "parent": world.parent_save,           
+        "player": player.nome,
         "local_tipo": player_local_tipo,
-        "tempo": world.tempo.isoformat(),       # datetime -> string ISO
+        "tempo": world.tempo.isoformat(),  
     }
 
     world_data = {
@@ -74,6 +71,46 @@ def salvar_jogo(world: World, base_dir: Path = Path("data/saves")) -> str:
     write_json(save_dir / "world.json", world_data)
     write_json(save_dir / "entities.json", entities_data)
 
-    # Próximo save terá este como pai.
     world.parent_save = timestamp
     return timestamp
+
+def apagar_save(world_id: str, timestamp: str, base_dir: Path = Path("data/saves")) -> list[str]:
+    import shutil
+    from utils.files import read_json
+
+    world_dir = base_dir / world_id
+    if not world_dir.exists():
+        return []
+
+    metas: dict[str, dict] = {}
+    for save_dir in world_dir.iterdir():
+        if not save_dir.is_dir():
+            continue
+        meta_file = save_dir / "meta.json"
+        if meta_file.exists():
+            try:
+                metas[save_dir.name] = read_json(meta_file)
+            except Exception:
+                continue
+
+    filhos: dict[str | None, list[str]] = {}
+    for ts, meta in metas.items():
+        filhos.setdefault(meta.get("parent"), []).append(ts)
+
+    a_remover: list[str] = []
+    fila = [timestamp]
+    while fila:
+        atual = fila.pop()
+        a_remover.append(atual)
+        for f in filhos.get(atual, []):
+            fila.append(f)
+
+    for ts in a_remover:
+        path = world_dir / ts
+        if path.exists():
+            shutil.rmtree(path)
+
+    if world_dir.exists() and not any(world_dir.iterdir()):
+        shutil.rmtree(world_dir)
+
+    return a_remover

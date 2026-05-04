@@ -1,82 +1,86 @@
-from core.world.world import World
-from core.world.regiao import Regiao
-from core.world import local as l
-from core.npc.npc import Npc
-
-from utils.tempo import formato_save
-from utils.file_management import save_write_json, get_json_files
-
 from datetime import datetime
 from pathlib import Path
-import importlib
-import json
+from typing import Type
 
-LOCAL_MODULE = importlib.import_module("core.world.local")
+from core.world.world import World
+from core.world.regiao import Regiao
+from core.entity.entity import Entity, Component
+from core.entity import components as comps_module
+from utils.files import read_json
 
 
-def load_game(game:str, save:str) -> World:
-    json_files = get_json_files(Path(f"data/saves/{game}/{save}"))
-    world = class_world(json_files['world.json'], save)
-    class_regioes(json_files['regioes.json'], json_files['locais.json'], world)
-    class_npcs(json_files['npcs.json'], world)
+SCHEMA_ATUAL = 1
+_MODULOS_COMPONENTES = (comps_module,)
+
+
+def listar_saves(base_dir: Path = Path("data/saves")) -> dict[str, dict[str, dict]]:
+    out: dict[str, dict[str, dict]] = {}
+    if not base_dir.exists():
+        return out
+    for world_dir in base_dir.iterdir():
+        if not world_dir.is_dir():
+            continue
+        for save_dir in world_dir.iterdir():
+            meta_file = save_dir / "meta.json"
+            if meta_file.exists():
+                out.setdefault(world_dir.name, {})[save_dir.name] = read_json(meta_file)
+    return out
+
+
+def _migrar(meta: dict, world_data: dict, entities_data: list,
+            de: int, para: int) -> tuple[dict, dict, list]:
+    while de < para:
+        proximo = de + 1
+        de = proximo
+    return meta, world_data, entities_data
+
+
+def _component_from_dict(cls_name: str, data: dict) -> Component | None:
+    cls: Type[Component] | None = None
+    for modulo in _MODULOS_COMPONENTES:
+        cls = getattr(modulo, cls_name, None)
+        if cls is not None:
+            break
+    if cls is None:
+        return None  
+
+    if cls_name == "LocalizacaoComponent" and "xy" in data:
+        data = {**data, "xy": tuple(data["xy"])}
+
+    try:
+        return cls(**data)
+    except Exception:
+        return cls()
+
+
+def _entity_from_dict(d: dict) -> Entity:
+    e = Entity(d["nome"], entity_id=d["id"])
+    for cls_name, comp_data in d.get("components", {}).items():
+        comp = _component_from_dict(cls_name, comp_data)
+        if comp is not None:
+            e.add(comp)
+    return e
+
+
+def carregar_jogo(world_id: str, save_timestamp: str, base_dir: Path = Path("data/saves")) -> World:
+    save_dir = base_dir / world_id / save_timestamp
+    meta = read_json(save_dir / "meta.json")
+    world_data = read_json(save_dir / "world.json")
+    entities_data = read_json(save_dir / "entities.json")
+
+    versao = meta.get("schema_version", 0)
+    if versao < SCHEMA_ATUAL:
+        meta, world_data, entities_data = _migrar(
+            meta, world_data, entities_data,
+            de=versao, para=SCHEMA_ATUAL,
+        )
+
+    world = World(world_data["nome"])
+    world.id = world_data["id"]
+    world.tempo = datetime.fromisoformat(world_data["tempo"])
+    world.parent_save = save_timestamp
+    for r_dict in world_data.get("regioes", []):
+        world.add_regiao(Regiao.from_dict(r_dict))
+    for e_dict in entities_data:
+        world.add_entity(_entity_from_dict(e_dict))
     return world
-
-def get_saves() -> dict[str, dict[str, dict]]:
-    pasta = Path("data/saves")
-    dicio = {}
-
-    for game in pasta.iterdir():
-        for save in game.iterdir():
-            file = save / "meta.json"
-            if file.exists():
-                dicio.setdefault(game.name, {})[save.name] = save_write_json(file, "r")
-    return dicio
-
-def class_world(world_dict:dict, save:str) -> World:
-    world = World(world_dict['nome'])
-    world.id = world_dict['id']
-    world.tempo = datetime(world_dict['ano'], world_dict['mes'], world_dict['dia'], world_dict['hora'], world_dict['minuto'])
-    world.parent = save # type: ignore
-    return world
-
-def class_regioes(regioes:dict, locais_dict:dict, world:World) -> None:
-    for regiao_dict in regioes:
-        regiao = Regiao(regiao_dict['nome_mundo'])
-        regiao.nome = regiao_dict['nome']
-        regiao.num_locais = tuple(regiao_dict['num_locais'])
-        for possibilidade in regiao_dict['possibilidades']:
-            regiao.possibilidades.append((getattr(LOCAL_MODULE, possibilidade[0]), possibilidade[1]))
-        locais = locais_dict[regiao.nome]
-        for local in locais:
-            class_local(local, regiao)
-        world.regioes.append(regiao)
-
-def class_local(local_dict:dict, regiao:Regiao) -> None:
-    classe = getattr(LOCAL_MODULE, local_dict['classe'])
-    match local_dict['classe']:
-        case "Residencia" | "Loja" | "Apartamento":
-            local = classe(local_dict['nome_regiao'], tuple(local_dict['xy']))
-            regiao.locais.append(local)
-
-def class_npcs(npcs:dict, world:World) -> None:
-    for npc_dict in npcs:
-        npc = Npc(npc_dict['nome'], npc_dict['npc'])
-        npc.id = npc_dict['id']
-        npc.nivel = npc_dict['nivel']
-        npc.energia = npc_dict['energia']
-        npc.energia_cap = npc_dict['energia_cap']
-        npc.exp = npc_dict['exp']
-        npc.exp_cap = npc_dict['exp_cap']
-        npc.dinheiro = npc_dict['dinheiro']
-        npc.fome = npc_dict['fome']
-        npc.sede = npc_dict['sede']
-        npc.fadiga = npc_dict['fadiga']
-        npc.sorte = npc_dict['sorte']
-        npc.forca = npc_dict['forca']
-        npc.fit = npc_dict['fit']
-        npc.local_atual = tuple(npc_dict['local_atual'])
-        npc.dentro_local = npc_dict['dentro_local']
-        npc.info_local_atual = world.get_regiao(npc_dict['info_local_atual']['nome_regiao']).get_local(tuple(npc_dict['info_local_atual']['xy']))
-        for local_conhecido in npc_dict['locais_conhecidos']:
-            npc.locais_conhecidos.setdefault(local_conhecido['nome_regiao'], {}).update({tuple(local_conhecido['xy']): world.get_regiao(local_conhecido['nome_regiao']).get_local(tuple(local_conhecido['xy']))})
-        world.npcs.append(npc)
