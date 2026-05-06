@@ -2,7 +2,7 @@ from textual.widgets import Static, Button
 from textual.containers import Vertical
 from textual.app import ComposeResult
 
-from ui.screens.base import BaseScreen
+from app.screens.base import BaseScreen
 
 
 class MenuInicial(BaseScreen):
@@ -18,10 +18,10 @@ class MenuInicial(BaseScreen):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "new_game":
-            from ui.screens.novo_jogo import NovoJogo 
+            from app.screens.novo_jogo import NovoJogo 
             self.app.push_screen(NovoJogo())
         elif event.button.id == "load_game":
-            from ui.screens.load_game import LoadGame
+            from app.screens.load_game import LoadGame
             from data.load_manager import listar_saves
             saves = listar_saves()
             if not saves:

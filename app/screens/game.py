@@ -3,14 +3,22 @@ from textual.containers import Vertical, Horizontal
 from textual.widgets import Static, Button
 
 from core.world.world import World
+from core.world.regiao import Regiao
+
 from core.time.manager import TimeManager
 from core.systems import registrar_sistemas
 from core.events import event_bus, LogMundoMensagem
-from core.entity import Entity
 
-from ui.screens.base import BaseScreen
-from ui.widgets.status import PainelStatus
-from ui.widgets.log_mundo import LogMundo
+from core.entity import Entity
+from core.entity.components import (
+    LocalizacaoComponent, ConhecimentoMundoComponent
+)
+
+from app.screens.base import BaseScreen
+
+from app.widgets.status import PainelStatus
+from app.widgets.log_mundo import LogMundo
+from app.widgets.map import MiniMapa
 
 
 class GameRunning(BaseScreen):
@@ -23,16 +31,25 @@ class GameRunning(BaseScreen):
         super().__init__()
         self.world = world
         player = world.main_player()
-        if player is None:
-            raise RuntimeError("World sem player — bug na fábrica?")
+        assert player is not None
         self.player: Entity = player
+        regiao = world.get_regiao(
+            self.player.require(LocalizacaoComponent).regiao_nome
+        )
+        assert regiao is not None
+        self.regiao:Regiao=regiao
 
-        self.time_manager = TimeManager(world, step_minutos=5)
+        self.time_manager = TimeManager(world, step_minutos=1)
         
         event_bus.clear()
         registrar_sistemas(self.world)
 
     def compose_body(self) -> ComposeResult:
+        conhecimento_mundo = self.player.require(ConhecimentoMundoComponent)
+        loc = self.player.require(LocalizacaoComponent)
+
+        mapa = MiniMapa(self.regiao, loc, conhecimento_mundo)
+
         yield Vertical(
             PainelStatus(self.player, id="status"),
             Static("[dim]Pressione +5 min para o tempo passar.[/]"),
@@ -78,5 +95,5 @@ class GameRunning(BaseScreen):
             self.notify(f"Erro ao salvar: {e}", severity="error")
 
     def action_voltar_menu(self) -> None:
-        from ui.screens.menu import MenuInicial
+        from app.screens.menu import MenuInicial
         self.app.push_screen(MenuInicial())

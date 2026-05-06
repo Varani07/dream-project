@@ -1,6 +1,6 @@
 from textual.app import App
 
-from ui.screens.menu import MenuInicial
+from app.screens.menu import MenuInicial
 
 
 class GameApp(App):

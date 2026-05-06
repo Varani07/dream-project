@@ -1,7 +1,7 @@
 from textual.widgets import Static, Button, Input
 from textual.containers import Vertical
 
-from ui.screens.base import BaseScreen
+from app.screens.base import BaseScreen
 from core.factory import novo_mundo
 
 
@@ -31,6 +31,6 @@ class NovoJogo(BaseScreen):
         if len(nome) < 3:
             self.notify("Nome precisa ter pelo menos 3 caracteres.", severity="warning")
             return
-        from ui.screens.game import GameRunning
+        from app.screens.game import GameRunning
         world = novo_mundo(nome)
         self.app.push_screen(GameRunning(world))

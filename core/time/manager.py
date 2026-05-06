@@ -12,14 +12,16 @@ class TimeManager:
     def now(self) -> str:
         return self.world.tempo.strftime("%d/%m/%Y %H:%M")
     
-    def avancar_simples(self, minutos: int, motivo: str = "wait") -> None:
+    def _avancar(self, minutos: int, motivo: str) -> None:
         dia_antes = self.world.tempo.date()
         self.world.tempo += timedelta(minutes=minutos)
-        event_bus.publish(
-            TempoAvancou(
-                minutos=minutos,
-                novo_datetime=self.world.tempo,
-                motivo=motivo,
-                novo_dia=self.world.tempo.date() != dia_antes
-            )
-        )
+        event_bus.publish(TempoAvancou(
+            minutos=minutos, novo_datetime=self.world.tempo, motivo=motivo,
+            novo_dia=self.world.tempo.date() != dia_antes,
+        ))
+
+    def avancar_em_passos(self, minutos: int, motivo: str = "acao") -> None:
+        if minutos <= 0:
+            return
+        for _ in range(minutos):
+            self._avancar(1, motivo=motivo)

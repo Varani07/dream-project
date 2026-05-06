@@ -22,6 +22,12 @@ class Entity:
         result = self._components.get(comp_type)
         return cast(T | None, result)
     
+    def require(self, comp_type: Type[T]) -> T:
+        c = self._components.get(comp_type)
+        if c is None:
+            raise KeyError(f"{self.nome} sem {comp_type.__name__}")
+        return cast(T, c)
+    
     def has(self, comp_type: Type[Component]) -> bool:
         return comp_type in self._components
     

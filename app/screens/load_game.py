@@ -3,7 +3,7 @@ from textual.widgets import Tree, Button
 from textual.containers import Vertical
 from textual import on
 
-from ui.screens.base import BaseScreen
+from app.screens.base import BaseScreen
 from data import carregar_jogo, listar_saves, apagar_save
 from utils.tempo import formato_datetime, formato_data
 
@@ -62,7 +62,7 @@ class LoadGame(BaseScreen):
             except Exception as e:
                 self.notify(f"Falha ao carregar: {e}", severity="error")
                 return
-            from ui.screens.game import GameRunning
+            from app.screens.game import GameRunning
             self.app.push_screen(GameRunning(world))
         elif data["acao"] == "apagar":
             removidos = apagar_save(data["game"], data["save"])

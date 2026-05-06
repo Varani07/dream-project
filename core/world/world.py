@@ -29,6 +29,12 @@ class World:
     def add_entity(self, entity: Entity) -> None:
         self.entities.append(entity)
 
+    def get_entity(self, entity_id: str) -> Entity | None:
+        return next(
+            (e for e in self.entities if e.id == entity_id),
+            None
+        )
+
     def main_player(self) -> Entity | None:
         return next(
             (entity for entity in self.entities if entity.has(ControlePlayerComponent)),

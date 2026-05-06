@@ -26,9 +26,11 @@ class Regiao:
         for x in range(tamanho[0]):
             for y in range(tamanho[1]):
                 tipo = choices(tipos, weights=pesos, k=1)[0]
-                local = Local(nome_regiao=self.nome, xy=(x, y), tipo=tipo)
-                if tipo in ['residencia']:
-                    local.trancado = True
+                match tipo:
+                    case 'residencia':
+                        local = Local.residencia(self.nome,(x,y))
+                    case _:
+                        local = Local.lugar_padrao(self.nome,(x,y),tipo)
                 self.locais.append(local)
 
     def get_local(self, xy: tuple[int, int]) -> Local | None:

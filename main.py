@@ -1,4 +1,4 @@
-from ui import GameApp
+from app import GameApp
 
 
 if __name__ == "__main__":

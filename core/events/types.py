@@ -22,3 +22,12 @@ class FalaEmitida(Event):
     fala: str
     intencao: str
     alvo_id: str | None = None
+    intensidade: int = 5
+    local_xy: tuple[int, int] | None = None
+
+@dataclass
+class AfinidadeMudou(Event):
+    de_id: str
+    para_id: str
+    delta: int
+    novo_valor: int
