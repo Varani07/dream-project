@@ -5,7 +5,7 @@ from pathlib import Path
 from core.world.world import World
 from core.entity.entity import Entity
 from core.entity.components import LocationComponent
-from utils.tempo import formato_save
+from utils.time import save_format
 from utils.files import write_json
 
 
@@ -46,7 +46,7 @@ def _entity_to_dict(entity: Entity) -> dict:
     }
 
 def save_game(world: World, base_dir: Path = Path("data/saves")) -> str:
-    timestamp = formato_save(datetime.now())
+    timestamp = save_format(datetime.now())
     save_dir = base_dir / world.id / timestamp
     save_dir.mkdir(parents=True, exist_ok=True)
 

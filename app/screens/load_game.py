@@ -5,7 +5,7 @@ from textual import on
 
 from app.screens.base import BaseScreen
 from data import load_game, list_saves, delete_save
-from utils.tempo import formato_datetime, formato_data
+from utils.time import datetime_format, date_format
 
 
 class LoadGame(BaseScreen):
@@ -35,12 +35,12 @@ class LoadGame(BaseScreen):
     def _build_tree_nodes(self, root) -> None:
         for world_id, world_saves in self.saves.items():
             world_node = root.add(f"Mundo {world_id}")
-            for timestamp, meta in sorted(world_saves.items(), key=lambda x: formato_datetime(x[0]), reverse=False):
+            for timestamp, meta in sorted(world_saves.items(), key=lambda x: datetime_format(x[0]), reverse=False):
                 if meta['parent'] is None:
-                    save_node = world_node.add(f"{formato_data(timestamp)} - {meta['player']}")
+                    save_node = world_node.add(f"{date_format(timestamp)} - {meta['player']}")
                 else:
                     parent_node = self._parent_nodes[meta['parent']]
-                    save_node = parent_node.add(f"{formato_data(timestamp)} - {meta['player']}")
+                    save_node = parent_node.add(f"{date_format(timestamp)} - {meta['player']}")
                 save_node.add(f"[green]Player: {meta['player']}[/]", data={"game": world_id, "save": timestamp, "action": "load"})
                 save_node.add(f"Local: {str(meta['location_type']).capitalize()}")
                 save_node.add(f"[red]Deletar save[/]", data={"game": world_id, "save": timestamp, "action": "delete"})

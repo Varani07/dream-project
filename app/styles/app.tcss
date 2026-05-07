@@ -112,6 +112,16 @@ Screen {
 }
 
 /* ------------------------------------------- LOAD GAME */
+#load_container {
+    height: 100%;
+    padding: 1;
+}
+
+#tree_saves {
+    height: 1fr;
+    border: round $success;
+    margin-bottom: 1;
+}
 
 /* ------------------------------------------- GAME-RUNNING */
 #game_root {

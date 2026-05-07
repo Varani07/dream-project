@@ -1,7 +1,7 @@
 from utils.files import read_json, write_json
-from utils.tempo import formato_save
+from utils.time import save_format
 
 __all__ = [
     "read_json", "write_json",
-    "formato_save"
+    "save_format"
 ]

@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import Any
 
 
-def write_json(path: Path, conteudo: Any) -> None:
+def write_json(path: Path, content: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
-        json.dump(conteudo, f, indent=2, ensure_ascii=False)
+        json.dump(content, f, indent=2, ensure_ascii=False)
 
 
 def read_json(path: Path) -> Any:
