@@ -1,66 +1,66 @@
 from random import choice
-from core.dialogue.intencao import Intencao
+from core.dialogue.intention import Intention
 
 
-TEMPLATES: dict[str, dict[Intencao, list[str]]] = {
+TEMPLATES: dict[str, dict[Intention, list[str]]] = {
     "amigavel": {
-        Intencao.CUMPRIMENTAR: [
+        Intention.CUMPRIMENTAR: [
             "Olá, {alvo}! Bom te ver.",
             "Ei, {alvo}! Tudo bem?",
         ],
-        Intencao.ELOGIAR: [
+        Intention.ELOGIAR: [
             "{alvo}, você tem um jeito que ilumina o lugar.",
             "Sempre fico feliz de te ver, {alvo}.",
         ],
-        Intencao.AMEACAR: [
+        Intention.AMEACAR: [
             "{alvo}, não me obrigue a te machucar.",
         ],
-        Intencao.DESPEDIR: [
+        Intention.DESPEDIR: [
             "Até mais, {alvo}!", "Cuide-se, {alvo}.",
         ],
     },
     "rabugento": {
-        Intencao.CUMPRIMENTAR: [
+        Intention.CUMPRIMENTAR: [
             "Hm. {alvo}.",
             "Que foi, {alvo}?",
         ],
-        Intencao.ELOGIAR: [
+        Intention.ELOGIAR: [
             "{alvo}... bom, você não é o pior.",
         ],
-        Intencao.AMEACAR: [
+        Intention.AMEACAR: [
             "Some daqui, {alvo}, antes que eu perca a paciência.",
             "{alvo}, não me teste.",
         ],
-        Intencao.DESPEDIR: [
+        Intention.DESPEDIR: [
             "Vai logo, {alvo}.",
         ],
     },
     "devoto": {
-        Intencao.CUMPRIMENTAR: [
+        Intention.CUMPRIMENTAR: [
             "Que os deuses te abençoem, {alvo}.",
         ],
-        Intencao.ELOGIAR: [
+        Intention.ELOGIAR: [
             "Vejo a luz neles em você, {alvo}.",
         ],
-        Intencao.AMEACAR: [
+        Intention.AMEACAR: [
             "Os deuses julgam, {alvo} — não sou eu.",
         ],
-        Intencao.DESPEDIR: [
+        Intention.DESPEDIR: [
             "Que sua estrada seja gentil, {alvo}.",
         ],
     },
     "neutro": {
-        Intencao.CUMPRIMENTAR: ["Olá, {alvo}."],
-        Intencao.ELOGIAR:      ["{alvo}, bom trabalho."],
-        Intencao.AMEACAR:      ["Cuidado com o que faz, {alvo}."],
-        Intencao.DESPEDIR:     ["Adeus, {alvo}."],
+        Intention.CUMPRIMENTAR: ["Olá, {alvo}."],
+        Intention.ELOGIAR:      ["{alvo}, bom trabalho."],
+        Intention.AMEACAR:      ["Cuidado com o que faz, {alvo}."],
+        Intention.DESPEDIR:     ["Adeus, {alvo}."],
     },
 }
 
 
-def gerar_fala(arquetipo: str, intencao: Intencao, alvo_nome: str = "") -> str:
-    bloco = TEMPLATES.get(arquetipo) or TEMPLATES["neutro"]
-    variantes = bloco.get(intencao)
-    if not variantes:
-        return f"...{alvo_nome}."
-    return choice(variantes).format(alvo=alvo_nome or "amigo")
+def generate_speech(archetype: str, intention: Intention, target_name: str = "") -> str:
+    block = TEMPLATES.get(archetype) or TEMPLATES["neutro"]
+    variants = block.get(intention)
+    if not variants:
+        return f"...{target_name}."
+    return choice(variants).format(alvo=target_name or "amigo")

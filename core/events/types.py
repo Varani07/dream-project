@@ -3,31 +3,31 @@ from datetime import datetime
 from core.events.bus import Event
 
 @dataclass
-class TempoAvancou(Event):
-    minutos: int
-    novo_datetime: datetime
-    motivo: str
-    novo_dia: bool = False
+class TimeAdvanced(Event):
+    minutes: int
+    new_datetime: datetime
+    reason: str
+    new_day: bool = False
 
 @dataclass
-class LogMundoMensagem(Event):
-    texto: str
-    cor: str = "white"
-    canal: str = "geral"
+class WorldLogMessage(Event):
+    text: str
+    color: str = "white"
+    channel: str = "geral"
 
 @dataclass
-class FalaEmitida(Event):
+class SpeechEmitted(Event):
     npc_id: str
-    npc_nome: str
-    fala: str
-    intencao: str
-    alvo_id: str | None = None
-    intensidade: int = 5
-    local_xy: tuple[int, int] | None = None
+    npc_name: str
+    speech: str
+    intention: str
+    target_id: str | None = None
+    intensity: int = 5
+    location_xy: tuple[int, int] | None = None
 
 @dataclass
-class AfinidadeMudou(Event):
-    de_id: str
-    para_id: str
+class AffinityChanged(Event):
+    from_id: str
+    to_id: str
     delta: int
-    novo_valor: int
+    new_value: int

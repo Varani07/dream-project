@@ -1,8 +1,8 @@
-from core.world.comodo import Comodo
-from core.world.local import Local
-from core.world.regiao import Regiao
+from core.world.room import Room
+from core.world.location import Location
+from core.world.region import Region
 from core.world.world import World
 
 __all__ = [
-    "Comodo", "Local", "Regiao", "World"
+    "Room", "Location", "Region", "World"
 ]

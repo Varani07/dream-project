@@ -3,28 +3,32 @@ from textual.containers import Vertical, Horizontal
 from textual.widgets import Static, Button
 
 from core.world.world import World
-from core.world.regiao import Regiao
+from core.world.region import Region
 
 from core.time.manager import TimeManager
-from core.systems import registrar_sistemas
-from core.events import event_bus, LogMundoMensagem
+from core.systems import register_systems
+from core.events import event_bus, WorldLogMessage
 
 from core.entity import Entity
 from core.entity.components import (
-    LocalizacaoComponent, ConhecimentoMundoComponent
+    LocationComponent, WorldKnowledgeComponent
 )
 
 from app.screens.base import BaseScreen
 
 from app.widgets.status import PainelStatus
-from app.widgets.log_mundo import LogMundo
-from app.widgets.map import MiniMapa
+from app.widgets.world_log import WorldLog
+from app.widgets.map import MiniMap
+
+from app.screens.mixins._movement import MovementMixin
 
 
-class GameRunning(BaseScreen):
+class GameRunning(
+    BaseScreen, MovementMixin):
+    
     BINDINGS = [
         ("S", "save",  "Salvar"),
-        ("H", "voltar_menu", "Menu"),
+        ("H", "back_to_menu", "Menu"),
     ]
 
     def __init__(self, world: World) -> None:
@@ -33,67 +37,75 @@ class GameRunning(BaseScreen):
         player = world.main_player()
         assert player is not None
         self.player: Entity = player
-        regiao = world.get_regiao(
-            self.player.require(LocalizacaoComponent).regiao_nome
+        region = world.get_region(
+            self.player.require(LocationComponent).region_name
         )
-        assert regiao is not None
-        self.regiao:Regiao=regiao
+        assert region is not None
+        self.world_region:Region=region
 
-        self.time_manager = TimeManager(world, step_minutos=1)
+        self.time_manager = TimeManager(world, step_minutes=1)
         
         event_bus.clear()
-        registrar_sistemas(self.world)
+        register_systems(self.world)
 
     def compose_body(self) -> ComposeResult:
-        conhecimento_mundo = self.player.require(ConhecimentoMundoComponent)
-        loc = self.player.require(LocalizacaoComponent)
+        world_knowledge = self.player.require(WorldKnowledgeComponent)
+        loc = self.player.require(LocationComponent)
 
-        mapa = MiniMapa(self.regiao, loc, conhecimento_mundo)
+        map = MiniMap(self.world_region, loc, world_knowledge, id="map")
+        status = PainelStatus(self.player, id="status")
+
+        time_bar = Horizontal(
+            Button("▶ Auto",        id="btn_time_play",    variant="success"),
+            Button("⏸ Pausar",      id="btn_time_stop",    variant="warning"),
+            Button("⏩ Avançar...",  id="btn_time_forward", variant="primary"),
+            Button("⏭ +1 hora",     id="btn_time_60",      variant="default"),
+            id="time_bar",
+        )
+
+        log = WorldLog(id="world_log")
+        log.add_event(f"[b cyan]Bem-vindo, {self.player.name}.[/]")
 
         yield Vertical(
-            PainelStatus(self.player, id="status"),
-            Static("[dim]Pressione +5 min para o tempo passar.[/]"),
             Horizontal(
-                Button("⏩ +5 min", id="btn_avancar5", variant="primary"),
-                Button("💾 Salvar (s)", id="btn_save"),
-                id="barra_acoes",
+                map,
+                Vertical(
+                    status,
+                    time_bar,
+                    id="status_col"
+                ),
+                id="top"
             ),
-            LogMundo(id="log_mundo"),
+            Horizontal(
+                log,
+                id="middle"
+            ),
             id="game_root",
         )
 
     def on_mount(self) -> None:
+        self._map = self.query_one("#map", MiniMap)
         self._status = self.query_one("#status", PainelStatus)
-        self._log = self.query_one("#log_mundo", LogMundo)
+        self._log = self.query_one("#world_log", WorldLog)
 
-        event_bus.subscribe_fn(LogMundoMensagem, self._on_log_msg)
-
-        self._atualizar_status
-        self._log.add_evento(f"[b cyan]Bem-vindo, {self.player.nome}.[/]")
+        event_bus.subscribe_fn(WorldLogMessage, self._on_log_msg)
+        self._update_status
 
     @property
-    def _atualizar_status(self) -> None:
-        self._status.atualizar(self.player, tempo_str=self.time_manager.now())
+    def _update_status(self) -> None:
+        self._status.update_status(self.player, time_str=self.time_manager.now())
 
-    def _on_log_msg(self, ev: LogMundoMensagem) -> None:
-        self._log.add_evento(ev.texto)
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        bid = event.button.id
-        if bid == "btn_avancar5":
-            self.time_manager.avancar_simples(5, motivo="manual")
-            self._atualizar_status
-        elif bid == "btn_save":
-            self.action_save()
+    def _on_log_msg(self, ev: WorldLogMessage) -> None:
+        self._log.add_event(ev.text)
 
     def action_save(self) -> None:
-        from data import salvar_jogo
+        from data import save_game
         try:
-            ts = salvar_jogo(self.world)
+            ts = save_game(self.world)
             self.notify(f"Jogo salvo ({ts}).")
         except Exception as e:
             self.notify(f"Erro ao salvar: {e}", severity="error")
 
-    def action_voltar_menu(self) -> None:
-        from app.screens.menu import MenuInicial
-        self.app.push_screen(MenuInicial())
+    def action_back_to_menu(self) -> None:
+        from app.screens.menu import MainMenu
+        self.app.push_screen(MainMenu())

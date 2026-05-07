@@ -1,58 +1,58 @@
 from core.events import (
-    event_bus, FalaEmitida, AfinidadeMudou, LogMundoMensagem,
+    event_bus, SpeechEmitted, AffinityChanged, WorldLogMessage,
 )
-from core.entity.components import AfinidadeComponent
-from core.dialogue.intencao import Intencao
+from core.entity.components import AffinityComponent
+from core.dialogue.intention import Intention
 from core.world.world import World
 
 
-_DELTA_AFINIDADE = {
-    Intencao.AMEACAR.value:      -1,
-    Intencao.ELOGIAR.value:      +1,
-    Intencao.CUMPRIMENTAR.value:  0,    # neutro
-    Intencao.DESPEDIR.value:      0,
-    Intencao.NENHUMA.value:       0,
+_AFFINITY_DELTA = {
+    Intention.AMEACAR.value:      -1,
+    Intention.ELOGIAR.value:      +1,
+    Intention.CUMPRIMENTAR.value:  0,    # neutro
+    Intention.DESPEDIR.value:      0,
+    Intention.NENHUMA.value:       0,
 }
 
-_COR_POR_INTENCAO = {
-    Intencao.AMEACAR.value:     "red",
-    Intencao.ELOGIAR.value:     "green",
-    Intencao.CUMPRIMENTAR.value:"cyan",
-    Intencao.DESPEDIR.value:    "dim",
-    Intencao.NENHUMA.value:     "white",
+_COLOR_BY_INTENTION = {
+    Intention.AMEACAR.value:     "red",
+    Intention.ELOGIAR.value:     "green",
+    Intention.CUMPRIMENTAR.value:"cyan",
+    Intention.DESPEDIR.value:    "dim",
+    Intention.NENHUMA.value:     "white",
 }
 
 
-def registrar_handlers_dialogo(world: World) -> None:
-    @event_bus.subscribe(FalaEmitida)
-    def _aplicar_afinidade(ev: FalaEmitida) -> None:
-        if not ev.alvo_id:
+def register_dialogue_handlers(world: World) -> None:
+    @event_bus.subscribe(SpeechEmitted)
+    def _apply_affinity(ev: SpeechEmitted) -> None:
+        if not ev.target_id:
             return
-        alvo = world.get_entity(ev.alvo_id)
-        emissor = world.get_entity(ev.npc_id)
-        if not (alvo and emissor):
+        target = world.get_entity(ev.target_id)
+        sender = world.get_entity(ev.npc_id)
+        if not (target and sender):
             return
 
-        base = _DELTA_AFINIDADE.get(ev.intencao, 0)
+        base = _AFFINITY_DELTA.get(ev.intention, 0)
         if base == 0:
             return
-        delta = base * ev.intensidade
+        delta = base * ev.intensity
 
-        af = alvo.get(AfinidadeComponent)
+        af = target.get(AffinityComponent)
         if af is None:
-            af = AfinidadeComponent()
-            alvo.add(af)
-        novo = af.ajustar(emissor.id, delta)
+            af = AffinityComponent()
+            target.add(af)
+        new_af = af.adjust(sender.id, delta)
 
-        event_bus.publish(AfinidadeMudou(
-            de_id=alvo.id, para_id=emissor.id,
-            delta=delta, novo_valor=novo,
+        event_bus.publish(AffinityChanged(
+            from_id=target.id, to_id=sender.id,
+            delta=delta, new_value=new_af,
         ))
 
-    @event_bus.subscribe(FalaEmitida)
-    def _logar_no_mundo(ev: FalaEmitida) -> None:
-        cor = _COR_POR_INTENCAO.get(ev.intencao, "white")
-        event_bus.publish(LogMundoMensagem(
-            texto=f"[{cor}][b]{ev.npc_nome}:[/b] {ev.fala}[/]",
-            cor=cor, canal="dialogo",
+    @event_bus.subscribe(SpeechEmitted)
+    def _log_to_world(ev: SpeechEmitted) -> None:
+        color = _COLOR_BY_INTENTION.get(ev.intention, "white")
+        event_bus.publish(WorldLogMessage(
+            text=f"[{color}][b]{ev.npc_name}:[/b] {ev.speech}[/]",
+            color=color, channel="dialogo",
         ))

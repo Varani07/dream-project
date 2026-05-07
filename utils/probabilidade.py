@@ -1,29 +1,24 @@
 from random import randint as ri
+from dataclasses import dataclass
 
+ESCALA = 1000
 
-def probabilidade(porcentagem:int, fadiga:bool, **kwargs) -> bool:
-    num_aleatorio = ri(1, 1000)
-    porcentagem *= 10 
-    #* Iterando pelos key word arguments, que estão estruturados como por exemplo: 
-    #* sorte=(5, self.sorte, True) | true significa que o valor vai somar e aumentar
-    #* a chance de dar certo, se for false vai diminuir. 5 vai ser o valor multiplicado
-    #* pela sorte e depois o resultado será somado a porcentagem
+@dataclass
+class Modificador:
+    valor: float
+    aumenta: bool
 
-    #* Se fadiga for True os bonus de acerto são zerados e para cada kwarg com False é subtraído 5% de chance
-
-    for value in kwargs.values():
-        if value[2]:
+def probabilidade(porcentagem: int, fadiga: bool, dado: int = 10, **kwargs: Modificador) -> bool:
+    num_aleatorio = ri(1, ESCALA)
+    fator_dado = (dado - 10) * (ESCALA // 100)
+    porcentagem = porcentagem * (ESCALA // 100) + fator_dado
+    for mod in kwargs.values():
+        if mod.aumenta:
             if not fadiga:
-                porcentagem += value[0] * value[1]
+                porcentagem += int(mod.valor * (ESCALA // 100))
         else:
-            porcentagem -= value[0] * value[1] 
-            if fadiga:
-                porcentagem -= 50
-
-    #* Verifica se o número aleatório é menor que o resultado da porcentagem
-    #* Dependendo retorna True ou False
-    if porcentagem >= num_aleatorio:
-        return True
-    else:
-        return False
+            porcentagem -= int(mod.valor * (ESCALA // 100))
+    if fadiga:
+        porcentagem -= 30 * (ESCALA // 100)
+    return porcentagem >= num_aleatorio
         

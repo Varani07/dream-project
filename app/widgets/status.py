@@ -1,14 +1,14 @@
 from textual.widgets import Static
 
 from core.entity.entity import Entity
-from core.entity.components import VitalidadeComponent, LocalizacaoComponent
+from core.entity.components import VitalityComponent, LocationComponent
 
 
-def _bar(valor: int, cap: int, largura: int = 10, cor: str = "green") -> str:
+def _bar(value: int, cap: int, width: int = 10, color: str = "green") -> str:
     if cap <= 0:
-        return f"[{cor}]{'░' * largura}[/]"
-    fill = max(0, min(largura, valor * largura // cap))
-    return f"[{cor}]{'█' * fill}{'░' * (largura - fill)}[/] {valor}/{cap}"
+        return f"[{color}]{'░' * width}[/]"
+    fill = max(0, min(width, value * width // cap))
+    return f"[{color}]{'█' * fill}{'░' * (width - fill)}[/] {value}/{cap}"
 
 
 class PainelStatus(Static):
@@ -16,30 +16,30 @@ class PainelStatus(Static):
         super().__init__("", **kw)
         self.player = player
 
-    def atualizar(self, player: Entity, tempo_str: str = "", local_nome: str = "") -> None:
+    def update_status(self, player: Entity, time_str: str = "", location_name: str = "") -> None:
         self.player = player
-        self.linhas = [f"[b cyan]{player.nome}[/]"]
+        self.lines = [f"[b cyan]{player.name}[/]"]
 
-        self._vitalidade
+        self._vitality
 
-        loc = player.get(LocalizacaoComponent)
+        loc = player.get(LocationComponent)
         if loc:
-            ar = "dentro" if loc.dentro_local else "fora"
-            nome = local_nome or loc.regiao_nome
-            self.linhas.append(f"[dim]📍 {nome} ({ar})[/]")
+            inout = "dentro" if loc.inside_location else "fora"
+            name = location_name or loc.region_name
+            self.lines.append(f"[dim]📍 {name} ({inout})[/]")
 
-        if tempo_str:
-            self.linhas.append(f"[dim]🕘 {tempo_str}[/]")
+        if time_str:
+            self.lines.append(f"[dim]🕘 {time_str}[/]")
 
-        self.update("\n".join(self.linhas))
+        self.update("\n".join(self.lines))
 
     @property
-    def _vitalidade(self) -> None:
-        v = self.player.get(VitalidadeComponent)
+    def _vitality(self) -> None:
+        v = self.player.get(VitalityComponent)
         if v:
-            cor = (
-                "red" if v.energia <= v.energia_cap // 4
-                else "yellow" if v.energia <= v.energia_cap // 2
+            color = (
+                "red" if v.energy <= v.cap // 4
+                else "yellow" if v.energy <= v.cap // 2
                 else "green"
             )
-            self.linhas.append(f"[{cor}]❤ Energia[/] {_bar(v.energia, v.energia_cap, cor=cor)}")
+            self.lines.append(f"[{color}]❤ Energia[/] {_bar(v.energy, v.cap, color=color)}")

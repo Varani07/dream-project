@@ -1,7 +1,7 @@
 from textual.widgets import RichLog
 
 
-class LogMundo(RichLog):
+class WorldLog(RichLog):
 
     def __init__(self, **kw):
         super().__init__(
@@ -13,5 +13,5 @@ class LogMundo(RichLog):
             **kw,
         )
 
-    def add_evento(self, texto: str) -> None:
-        self.write(texto)
+    def add_event(self, text: str) -> None:
+        self.write(text)

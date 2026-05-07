@@ -2,51 +2,51 @@ from random import randint
 
 from core.entity.entity import Entity
 from core.entity.components import (
-    PersonalidadeComponent, AfinidadeComponent, LocalizacaoComponent,
+    PersonalityComponent, AffinityComponent, LocationComponent,
 )
-from core.events import event_bus, FalaEmitida
-from core.dialogue.intencao import Intencao, DialogueResult
-from core.dialogue.templates import gerar_fala
+from core.events import event_bus, SpeechEmitted
+from core.dialogue.intention import Intention, DialogueResult
+from core.dialogue.templates import generate_speech
 
 
 class DialoguePipeline:
-    def decidir_intencao(self, npc: Entity, alvo: Entity) -> Intencao:
-        afinidade = 0
-        af = npc.get(AfinidadeComponent)
+    def decide_intention(self, npc: Entity, target: Entity) -> Intention:
+        affinity = 0
+        af = npc.get(AffinityComponent)
         if af:
-            afinidade = af.valor_por_id.get(alvo.id, 0)
+            affinity = af.value_by_id.get(target.id, 0)
 
-        if afinidade <= -50:
-            return Intencao.AMEACAR
-        if afinidade >= 30:
-            return Intencao.ELOGIAR
-        return Intencao.CUMPRIMENTAR
+        if affinity <= -50:
+            return Intention.AMEACAR
+        if affinity >= 30:
+            return Intention.ELOGIAR
+        return Intention.CUMPRIMENTAR
 
-    def gerar_fala_de(self, npc: Entity, intencao: Intencao, alvo_nome: str) -> str:
-        pers = npc.get(PersonalidadeComponent)
-        arquetipo = pers.arquetipo if pers else "neutro"
-        return gerar_fala(arquetipo, intencao, alvo_nome=alvo_nome)
+    def generate_speech_from(self, npc: Entity, intention: Intention, target_name: str) -> str:
+        pers = npc.get(PersonalityComponent)
+        archetype = pers.archetype if pers else "neutro"
+        return generate_speech(archetype, intention, target_name=target_name)
 
-    def falar(self, npc: Entity, alvo: Entity, intencao_forcada: Intencao | None = None) -> DialogueResult:
-        intencao = intencao_forcada or self.decidir_intencao(npc, alvo)
-        fala = self.gerar_fala_de(npc, intencao, alvo_nome=alvo.nome)
-        intensidade = randint(3, 7)
+    def speak(self, npc: Entity, target: Entity, forced_intention: Intention | None = None) -> DialogueResult:
+        intention = forced_intention or self.decide_intention(npc, target)
+        speech = self.generate_speech_from(npc, intention, target_name=target.name)
+        intensity = randint(3, 7)
 
-        loc = npc.get(LocalizacaoComponent)
-        local_xy = loc.xy if loc else None
+        location_comp = npc.get(LocationComponent)
+        location_xy = location_comp.xy if location_comp else None
 
-        event_bus.publish(FalaEmitida(
+        event_bus.publish(SpeechEmitted(
             npc_id=npc.id,
-            npc_nome=npc.nome,
-            fala=fala,
-            intencao=intencao.value,    
-            alvo_id=alvo.id,
-            intensidade=intensidade,
-            local_xy=local_xy,
+            npc_name=npc.name,
+            speech=speech,
+            intention=intention.value,    
+            target_id=target.id,
+            intensity=intensity,
+            location_xy=location_xy,
         ))
 
         return DialogueResult(
-            fala=fala, intencao=intencao,
-            alvo_id=alvo.id, intensidade=intensidade,
+            speech=speech, intention=intention,
+            target_id=target.id, intensity=intensity,
         )
     

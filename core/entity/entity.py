@@ -9,9 +9,9 @@ class Component: pass
 T = TypeVar("T", bound=Component)
 
 class Entity:
-    def __init__(self, nome: str, entity_id: str|None = None) -> None:
+    def __init__(self, name: str, entity_id: str|None = None) -> None:
         self.id = entity_id or str(uuid.uuid4())
-        self.nome = nome
+        self.name = name
         self._components: dict[type, Component] = {}
 
     def add(self, comp: Component) -> Self:
@@ -25,7 +25,7 @@ class Entity:
     def require(self, comp_type: Type[T]) -> T:
         c = self._components.get(comp_type)
         if c is None:
-            raise KeyError(f"{self.nome} sem {comp_type.__name__}")
+            raise KeyError(f"{self.name} sem {comp_type.__name__}")
         return cast(T, c)
     
     def has(self, comp_type: Type[Component]) -> bool:

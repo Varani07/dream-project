@@ -2,44 +2,42 @@ from random import choice
 
 from core.entity.entity import Entity
 from core.entity.components import (
-    IdentidadeComponent, ControlePlayerComponent,
-    VitalidadeComponent, LocalizacaoComponent,
-    PersonalidadeComponent, AfinidadeComponent,
-    ConhecimentoMundoComponent,
-    ARQUETIPOS_VALIDOS
+    IdentityComponent, PlayerControlComponent,
+    VitalityComponent, LocationComponent,
+    PersonalityComponent, AffinityComponent,
+    WorldKnowledgeComponent,
+    VALID_ARCHETYPES
 )
 
 
-def criar_player(nome:str):
-    e = Entity(nome)
-    e.add(IdentidadeComponent(classe_social="comum", nome_publico=nome))
-    e.add(VitalidadeComponent())
-    e.add(PersonalidadeComponent())
-    e.add(AfinidadeComponent())
+def create_player(name:str):
+    e = Entity(name)
+    e.add(IdentityComponent(social_class="comum", public_name=name))
+    e.add(VitalityComponent())
+    e.add(PersonalityComponent())
+    e.add(AffinityComponent())
 
-    e.add(LocalizacaoComponent())
-    e.add(ConhecimentoMundoComponent())
+    e.add(LocationComponent())
+    e.add(WorldKnowledgeComponent())
 
-    e.add(ControlePlayerComponent())
+    e.add(PlayerControlComponent())
     return e
 
 
-def criar_npc(
-        nome:str,arquetipo:str="neutro",regiao_nome:str="Kazer",
-        xy:tuple[int, int]=(0, 0),dentro_local:bool=False,
-        c_xy:tuple[int,int]=(0,0)) -> Entity:
+def create_npc(
+        name:str,archetype:str="neutro",region_name:str="Kazer",
+        xy:tuple[int, int]=(0, 0),inside_location:bool=False,
+        room_xy:tuple[int,int]=(0,0)) -> Entity:
     
-    n = Entity(nome)
-    n.add(IdentidadeComponent(classe_social="comum", nome_publico=nome))
-    n.add(VitalidadeComponent())
-    n.add(PersonalidadeComponent(arquetipo=arquetipo))
-    n.add(AfinidadeComponent())
+    n = Entity(name)
+    n.add(IdentityComponent(social_class="comum", public_name=name))
+    n.add(VitalityComponent())
+    n.add(PersonalityComponent(archetype=archetype))
+    n.add(AffinityComponent())
 
-    n.add(LocalizacaoComponent(
-        regiao_nome=regiao_nome, xy=xy, 
-        dentro_local=dentro_local, comodo=c_xy,
+    n.add(LocationComponent(
+        region_name=region_name, xy=xy, 
+        inside_location=inside_location, room=room_xy,
     ))
-    conhecimento_mundo = ConhecimentoMundoComponent()
-    conhecimento_mundo.add_comodo(regiao_nome,xy,c_xy)
-    n.add(conhecimento_mundo)
+    n.add(WorldKnowledgeComponent().add_room(region_name,xy,room_xy))
     return n

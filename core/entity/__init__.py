@@ -1,7 +1,7 @@
 from core.entity.entity import Entity, Component
-from core.entity.factory import criar_npc, criar_player
+from core.entity.factory import create_npc, create_player
 
 __all__ = [
     "Entity", "Component",
-    "criar_player", "criar_npc",
+    "create_player", "create_npc",
 ]

@@ -1,12 +1,12 @@
 from core.systems import _vitalidade
-from core.dialogue.handlers import registrar_handlers_dialogo
+from core.dialogue.handlers import register_dialogue_handlers
 
 
-def registrar_sistemas(world):
-    _vitalidade.registrar(world)
-    registrar_handlers_dialogo(world)
+def register_systems(world):
+    _vitalidade.register(world)
+    register_dialogue_handlers(world)
 
 
 __all__ = [
-    "registrar_sistemas"
+    "register_systems"
 ]

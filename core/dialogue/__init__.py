@@ -1,7 +1,7 @@
-from core.dialogue.intencao import Intencao, DialogueResult
-from core.dialogue.templates import gerar_fala
+from core.dialogue.intention import Intention, DialogueResult
+from core.dialogue.templates import generate_speech
 
 __all__ = [
-    "Intencao", "DialogueResult",
-    "gerar_fala"
+    "Intention", "DialogueResult",
+    "generate_speech"
 ]

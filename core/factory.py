@@ -1,20 +1,25 @@
-from core.entity import criar_player, criar_npc
+from core.entity import create_player, create_npc
 from core.world import World
-from core.systems import registrar_sistemas
-from core.entity.components import LocalizacaoComponent
+from core.systems import register_systems
+from core.entity.components import LocationComponent, WorldKnowledgeComponent
 
 
-def novo_mundo(nome_player: str, nome_mundo: str = "Kazer"):
-    player = criar_player(nome_player)
-    world = World.mundo_inicial(player, nome_mundo)
-    player_loc = player.get(LocalizacaoComponent)
+def new_world(player_name: str, world_name: str = "Kazer"):
+    player = create_player(player_name)
+    world = World.initial_world(player, world_name)
+    player_loc = player.get(LocationComponent)
     assert player_loc is not None
+    player.require(WorldKnowledgeComponent).add_room(
+        player_loc.region_name,
+        player_loc.xy,
+        player_loc.room
+    )
 
-    bertrand = criar_npc(
-        "Bertrand", arquetipo="rabugento",
-        regiao_nome=nome_mundo,
-        xy=player_loc.xy, dentro_local=True,
-        c_xy=player_loc.comodo
+    bertrand = create_npc(
+        "Bertrand", archetype="rabugento",
+        region_name=world_name,
+        xy=player_loc.xy, inside_location=True,
+        room_xy=player_loc.room
     )
     world.add_entity(bertrand)
 

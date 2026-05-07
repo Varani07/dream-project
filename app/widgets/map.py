@@ -1,103 +1,105 @@
 from textual.containers import Grid
 from textual.widgets import Button
 
-from core.entity.components import ConhecimentoMundoComponent, LocalizacaoComponent
-from core.world import Regiao, Local
+from core.entity.components import WorldKnowledgeComponent, LocationComponent
+from core.world import Region, Location
 
 
-class MiniMapa(Grid):
+class MiniMap(Grid):
     def __init__(
-            self,regiao:Regiao,localizacao:LocalizacaoComponent,
-            conhecimento_mundo:ConhecimentoMundoComponent,**kw):
+            self,world_region:Region,location_comp:LocationComponent,
+            world_knowledge_comp:WorldKnowledgeComponent,**kw):
         
         super().__init__(**kw)
-        self.desenhando = False
-        self.montar_informacoes(regiao,localizacao,conhecimento_mundo)
+        self.drawing = False
+        self.build_info(world_region,location_comp,world_knowledge_comp)
 
     def compose(self):
+        self.notify(f"{self.rows}, {self.cols}")
         for y in range(self.rows):
             for x in range(self.cols):
                 yield Button(self._label(x, y), id=f"cell_{x}_{y}", classes="cell_btn")
 
     def _label(self, x: int, y: int) -> str:
-        if not self.inside_local:
-            lugar = self.regiao.get_local((x,y))
+        if not self.inside_location:
+            place = self.world_region.get_location((x,y))
         else:
-            lugar = self.local.get_comodo((x,y))
+            place = self.place.get_room((x,y))
             
-        if (x, y) == self.atual:
+        if (x, y) == self.current:
             return "[red]x[/]"
-        if (x, y) in self.conhecidos and lugar:
-            return f"[{lugar.cor}]{lugar.glyph}[/]"
-        if not self.inside_local or (self.inside_local and (x,y) in self.comodos_possiveis):
+        if (x, y) in self.known and place:
+            return f"[{place.color}]{place.glyph}[/]"
+        if not self.inside_location or (self.inside_location and (x,y) in self.possible_rooms):
             return "[dim]?[/]"
         else:
             return "[dim]░[/]"
 
-    def atualizar(
-            self, conhecidos: set[tuple[int, int]],
-            atual: tuple[int, int]) -> None:
+    def update(
+            self, known: set[tuple[int, int]],
+            current: tuple[int, int]) -> None:
         
-        self.conhecidos = conhecidos
-        self.atual = atual
+        self.known = known
+        self.current = current
         
-        celulas = self.query(".cell_btn")
+        cells = self.query(".cell_btn")
 
-        for btn in celulas:
+        for btn in cells:
             if btn.id is None:
                 continue
             _,x_str,y_str=btn.id.split("_")
             x,y=int(x_str),int(y_str)
             btn.label = self._label(x, y) #type: ignore
 
-    async def recriar_mapa(
-            self,regiao:Regiao,localizacao:LocalizacaoComponent,
-            conhecimento_mundo:ConhecimentoMundoComponent) -> None:
+    async def rebuild_map(
+            self,region:Region,location_comp:LocationComponent,
+            world_knowledge_comp:WorldKnowledgeComponent) -> None:
         
-        if self.desenhando:
+        if self.drawing:
             return
-        self.desenhando=True
+        self.drawing=True
 
         try:
-            self.montar_informacoes(regiao,localizacao,conhecimento_mundo)
-
+            self.build_info(region,location_comp,world_knowledge_comp)
             await self.query(".cell_btn").remove()
-
-            novos_botoes = []
+            new_btns = []
             for y in range(self.rows):
                 for x in range(self.cols):
-                    novos_botoes.append(
+                    new_btns.append(
                         Button(self._label(x, y), id=f"cell_{x}_{y}", classes="cell_btn")
                     )
-            await self.mount(*novos_botoes)
+            await self.mount(*new_btns)
         finally:
-            self.desenhando=False
+            self.drawing=False
 
-    def montar_informacoes(
-            self,regiao:Regiao,localizacao:LocalizacaoComponent,
-            conhecimento_mundo:ConhecimentoMundoComponent):
+    def build_info(
+            self,region:Region,location_comp:LocationComponent,
+            world_knowledge_comp:WorldKnowledgeComponent):
     
-        self.regiao = regiao
-        local = self.regiao.get_local(localizacao.xy)
-        assert local is not None
-        self.local:Local=local
-        self.inside_local:bool=localizacao.dentro_local
-        self.comodos_possiveis = set()
+        self.world_region = region
+        place = self.world_region.get_location(location_comp.xy)
+        assert place is not None
+        self.place:Location=place
+        self.inside_location:bool=location_comp.inside_location
+        self.possible_rooms = set()
 
-        if not localizacao.dentro_local:
-            self.atual = localizacao.xy
-            self.conhecidos = conhecimento_mundo.local_conhecido(self.regiao.nome)
-            self.cols, self.rows = regiao.num_locais
+        if not location_comp.inside_location:
+            self.current = location_comp.xy
+            self.known = world_knowledge_comp.get_known_places(self.world_region.name)
+            self.cols, self.rows = region.locations_count
         else:
-            self.atual = localizacao.comodo
-            self.conhecidos = conhecimento_mundo.comodo_conhecido(
-                nome_regiao=self.regiao.nome,
-                xy=localizacao.xy
+            self.current = location_comp.room
+            self.known = world_knowledge_comp.get_known_rooms(
+                region_name=self.world_region.name,
+                xy=location_comp.xy
             )
-            self.cols, self.rows = self.local.num_comodos
-            self.comodos_possiveis = self.local.possiveis_comodos
+            self.cols, self.rows = self.place.rooms_count
+            self.possible_rooms = self.place.possible_rooms
+
+        self.cols, self.rows = self.cols+1, self.rows+1
 
         self.styles.grid_size_columns = self.cols
         self.styles.grid_size_rows = self.rows
         self.styles.grid_columns = ("6 " * self.cols).strip()
         self.styles.grid_rows = ("3 " * self.rows).strip()
+        

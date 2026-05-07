@@ -6,7 +6,7 @@ Screen {
 #header { dock: top; }
 #footer { dock: bottom; }
 
-/* MENU INICIAL */
+/* ------------------------------------------- MAIN MENU */
 #menu_container {
     align: center middle;
     width: 60;
@@ -16,14 +16,14 @@ Screen {
     background: $panel;
 }
 
-#titulo {
+#title {
     content-align: center middle;
     text-style: bold;
     color: $accent;
     margin-bottom: 1;
 }
 
-#subtitulo {
+#subtitle {
     content-align: center middle;
     margin-bottom: 2;
 }
@@ -67,8 +67,8 @@ Screen {
     border: tall $accent 80%;
 }
 
-/* NOVO JOGO */
-#novo_jogo_container {
+/* ------------------------------------------- NEW GAME */
+#new_game_container {
     align: center middle;
     width: 60;
     height: auto;
@@ -77,19 +77,19 @@ Screen {
     background: $panel;
 }
 
-#titulo_novo {
+#new_title {
     content-align: center middle;
     text-style: bold;
     color: $accent;
     margin-bottom: 2;
 }
 
-#input_nome {
+#input_name {
     margin: 1 0;
     border: tall $accent;
 }
 
-#iniciar, #voltar {
+#start, #back {
     width: 100%;
     height: 3;
     margin: 1 0;
@@ -98,37 +98,124 @@ Screen {
     text-style: none;
 }
 
-#iniciar:hover, #voltar:hover {
+#start:hover, #back:hover {
     background: $primary 50%;
     color: $text;
     border: tall $primary 70%;
 }
 
-#iniciar:focus, #voltar:focus {
+#start:focus, #back:focus {
     background: $primary 50%;
     color: $text;
     text-style: bold;
     border: tall $accent 80%;
 }
 
-/* GAME-RUNNING */
+/* ------------------------------------------- LOAD GAME */
+
+/* ------------------------------------------- GAME-RUNNING */
 #game_root {
     width: 100%;
     height: 100%;
 }
 
-#status {
-    height: 6;
+#top {
+    height: 35%;
+}
+
+#map {
+    width: 50%;
     border: round $primary;
-    padding: 0 1;
+    padding: 1;
 }
 
-#barra_acoes {
+.cell_btn {
+    background: transparent;
+    border: none;
+    min-height: 1;
     height: 3;
-    margin: 1 0;
+    width: 6;
+    padding: 0;
+    content-align: center middle;
+    color: $text;
 }
 
-#log_mundo {
+.cell_btn:hover {
+    background: $primary 25%;
+    text-style: none;
+}
+
+.cell_btn:focus {
+    background: $accent 30%;
+    text-style: bold;
+    border: none;
+}
+
+.cell_btn.-active {
+    background: $accent 25%;
+    border: none;
+}
+
+#status_col {
+    width: 50%;
+    height: 100%;
+}
+
+#status {
+    width: 100%;
+    height: 85%;
+    border: round $secondary;
+    padding: 1 2;
+    background: $panel;
+}
+
+#time_bar Button {
+    min-width: 14;
+    width: auto;
+    height: 3;
+    color: $text;
+    text-style: none;
+    border: tall $primary 60%;
+    content-align: center middle;
+}
+
+#btn_time_play {
+    background: $success 35%;
+    border: tall $success 60%;
+}
+#btn_time_play:hover  { background: $success 55%; border: tall $success 75%; }
+#btn_time_play:focus  { background: $success 60%; border: tall $accent 80%; text-style: bold; }
+#btn_time_play.-active{ background: $success 65%; border: tall $accent 80%; text-style: bold; }
+
+#btn_time_stop {
+    background: $warning 35%;
+    border: tall $warning 60%;
+}
+#btn_time_stop:hover  { background: $warning 55%; border: tall $warning 75%; }
+#btn_time_stop:focus  { background: $warning 60%; border: tall $accent 80%; text-style: bold; }
+#btn_time_stop.-active{ background: $warning 65%; border: tall $accent 80%; text-style: bold; }
+
+#btn_time_forward {
+    background: $primary 35%;
+    border: tall $primary 60%;
+}
+#btn_time_forward:hover  { background: $primary 60%; border: tall $primary 75%; }
+#btn_time_forward:focus  { background: $primary 55%; border: tall $accent 80%; text-style: bold; }
+#btn_time_forward.-active{ background: $primary 65%; border: tall $accent 80%; text-style: bold; }
+
+#btn_time_60 {
+    background: $accent 35%;
+    border: tall $accent 60%;
+}
+#btn_time_60:hover  { background: $accent 55%; border: tall $accent 75%; }
+#btn_time_60:focus  { background: $accent 60%; border: tall $accent 80%; text-style: bold; }
+#btn_time_60.-active{ background: $accent 65%; border: tall $accent 80%; text-style: bold; }
+
+#middle {
+    height: 1fr;
+}
+
+#world_log {
     height: 1fr;          /* 1fr = "ocupa todo o espaço restante" */
     border: round $primary;
     padding: 0 1;

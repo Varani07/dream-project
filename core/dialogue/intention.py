@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 
-class Intencao(str, Enum):
+class Intention(str, Enum):
     CUMPRIMENTAR = "CUMPRIMENTAR"
     ELOGIAR      = "ELOGIAR"
     AMEACAR      = "AMEACAR"
@@ -12,7 +12,7 @@ class Intencao(str, Enum):
 
 @dataclass
 class DialogueResult:
-    fala: str
-    intencao: Intencao
-    alvo_id: str | None = None
-    intensidade: int = 5
+    speech: str
+    intention: Intention
+    target_id: str | None = None
+    intensity: int = 5

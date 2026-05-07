@@ -3,26 +3,26 @@ import uuid
 from random import randint as ri
 from typing import Self
 
-from core.world.regiao import Regiao
+from core.world.region import Region
 from core.entity.entity import Entity
-from core.entity.components import LocalizacaoComponent, ControlePlayerComponent
+from core.entity.components import LocationComponent, PlayerControlComponent
 
 
 class World:
-    def __init__(self, nome: str) -> None:
+    def __init__(self, name: str) -> None:
         self.id: str = str(uuid.uuid4())
-        self.nome = nome
-        self.regioes: list[Regiao] = []
+        self.name = name
+        self.regions: list[Region] = []
         self.entities: list[Entity] = []
-        self.tempo: datetime = datetime(1000, 1, 1, 7, 0)
+        self.time: datetime = datetime(1000, 1, 1, 7, 0)
         self.parent_save: str | None = None
 
-    def add_regiao(self, regiao: Regiao) -> None:
-        self.regioes.append(regiao)
+    def add_region(self, region: Region) -> None:
+        self.regions.append(region)
     
-    def get_regiao(self, nome: str) -> Regiao | None:
+    def get_region(self, name: str) -> Region | None:
         return next(
-            (regiao for regiao in self.regioes if regiao.nome == nome),
+            (region for region in self.regions if region.name == name),
             None
         )
     
@@ -37,21 +37,21 @@ class World:
 
     def main_player(self) -> Entity | None:
         return next(
-            (entity for entity in self.entities if entity.has(ControlePlayerComponent)),
+            (entity for entity in self.entities if entity.has(PlayerControlComponent)),
             None
         )
     
     @classmethod
-    def mundo_inicial(cls, player: Entity, nome_mundo: str = "Kazer") -> Self:
-        inst = cls(nome_mundo)
-        regiao = Regiao.cidade_inicial(nome_mundo=nome_mundo)
-        residencias = [local for local in regiao.locais if local.tipo == "residencia"]
-        local_inicial = residencias[0] if residencias else regiao.locais[ri(0, len(regiao.locais)-1)]
-        loc = player.get(LocalizacaoComponent)
+    def initial_world(cls, player: Entity, world_name: str = "Kazer") -> Self:
+        inst = cls(world_name)
+        region = Region.initial_city(world_name=world_name)
+        residences = [locations for locations in region.locations if locations.location_type == "residencia"]
+        initial_location = residences[0] if residences else region.locations[ri(0, len(region.locations)-1)]
+        loc = player.get(LocationComponent)
         if loc:
-            loc.regiao_nome = regiao.nome
-            loc.xy = local_inicial.xy
-        inst.add_regiao(regiao)
+            loc.region_name = region.name
+            loc.xy = initial_location.xy
+        inst.add_region(region)
         inst.add_entity(player)
         return inst
     

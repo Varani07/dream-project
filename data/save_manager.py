@@ -4,24 +4,34 @@ from pathlib import Path
 
 from core.world.world import World
 from core.entity.entity import Entity
-from core.entity.components import LocalizacaoComponent
+from core.entity.components import LocationComponent
 from utils.tempo import formato_save
 from utils.files import write_json
 
 
 SCHEMA_VERSION: int = 1
-_COMPONENTES_TRANSIENTES: set[str] = set()
+_TRANSIENT_COMPONENTS: set[str] = set()
 
 
 def _normalize_for_json(cls_name: str, data: dict) -> dict:
-    if cls_name == "LocalizacaoComponent" and "xy" in data:
-        return {**data, "xy": list(data["xy"])}
+    if cls_name == "WorldKnowledgeComponent":
+        # dict[str,dict[tuple[int,int],list[tuple[int,int]]]]
+        return {
+            **data,
+            "known_locations":{
+                ok: {
+                    f"{x},{y}": iv
+                    for (x,y), iv in ov.items()
+                }
+                for ok, ov in data['known_locations'].items()
+            }
+        }
     return data
 
 def _entity_to_dict(entity: Entity) -> dict:
     comps_dict: dict[str, dict] = {}
     for cls_name, comp in entity.all_components().items():
-        if cls_name in _COMPONENTES_TRANSIENTES:
+        if cls_name in _TRANSIENT_COMPONENTS:
             continue
         if is_dataclass(comp):
             data = asdict(comp)
@@ -31,11 +41,11 @@ def _entity_to_dict(entity: Entity) -> dict:
         comps_dict[cls_name] = data
     return {
         "id": entity.id,
-        "nome": entity.nome,
+        "name": entity.name,
         "components": comps_dict,
     }
 
-def salvar_jogo(world: World, base_dir: Path = Path("data/saves")) -> str:
+def save_game(world: World, base_dir: Path = Path("data/saves")) -> str:
     timestamp = formato_save(datetime.now())
     save_dir = base_dir / world.id / timestamp
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -43,26 +53,26 @@ def salvar_jogo(world: World, base_dir: Path = Path("data/saves")) -> str:
     player = world.main_player()
     assert player is not None
     if player:
-        loc = player.get(LocalizacaoComponent)
+        loc = player.get(LocationComponent)
         if loc:
-            regiao = world.get_regiao(loc.regiao_nome)
-            local = regiao.get_local(loc.xy) if regiao else None
-            if local:
-                player_local_tipo = local.tipo
+            region = world.get_region(loc.region_name)
+            location = region.get_location(loc.xy) if region else None
+            if location:
+                player_location_type = location.location_type
 
     meta = {
         "schema_version": SCHEMA_VERSION,
         "parent": world.parent_save,           
-        "player": player.nome,
-        "local_tipo": player_local_tipo,
-        "tempo": world.tempo.isoformat(),  
+        "player": player.name,
+        "location_type": player_location_type,
+        "time": world.time.isoformat(),  
     }
 
     world_data = {
         "id": world.id,
-        "nome": world.nome,
-        "tempo": world.tempo.isoformat(),
-        "regioes": [r.to_dict() for r in world.regioes],
+        "name": world.name,
+        "time": world.time.isoformat(),
+        "regions": [r.to_dict() for r in world.regions],
     }
 
     entities_data = [_entity_to_dict(e) for e in world.entities]
@@ -74,7 +84,7 @@ def salvar_jogo(world: World, base_dir: Path = Path("data/saves")) -> str:
     world.parent_save = timestamp
     return timestamp
 
-def apagar_save(world_id: str, timestamp: str, base_dir: Path = Path("data/saves")) -> list[str]:
+def delete_save(world_id: str, timestamp: str, base_dir: Path = Path("data/saves")) -> list[str]:
     import shutil
     from utils.files import read_json
 
@@ -93,19 +103,19 @@ def apagar_save(world_id: str, timestamp: str, base_dir: Path = Path("data/saves
             except Exception:
                 continue
 
-    filhos: dict[str | None, list[str]] = {}
+    children: dict[str | None, list[str]] = {}
     for ts, meta in metas.items():
-        filhos.setdefault(meta.get("parent"), []).append(ts)
+        children.setdefault(meta.get("parent"), []).append(ts)
 
-    a_remover: list[str] = []
-    fila = [timestamp]
-    while fila:
-        atual = fila.pop()
-        a_remover.append(atual)
-        for f in filhos.get(atual, []):
-            fila.append(f)
+    to_delete: list[str] = []
+    queue = [timestamp]
+    while queue:
+        current = queue.pop()
+        to_delete.append(current)
+        for child in children.get(current, []):
+            queue.append(child)
 
-    for ts in a_remover:
+    for ts in to_delete:
         path = world_dir / ts
         if path.exists():
             shutil.rmtree(path)
@@ -113,4 +123,4 @@ def apagar_save(world_id: str, timestamp: str, base_dir: Path = Path("data/saves
     if world_dir.exists() and not any(world_dir.iterdir()):
         shutil.rmtree(world_dir)
 
-    return a_remover
+    return to_delete
