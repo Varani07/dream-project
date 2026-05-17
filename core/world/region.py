@@ -39,6 +39,14 @@ class Region:
             None
         )
     
+    def get_possible_locations(self,inside:bool=False,current_location:tuple[int,int]|None=None)->set[tuple[int,int]]:
+        if inside and current_location is not None:
+            location = self.get_location(current_location)
+            assert location is not None
+            return set(room.xy for room in location.rooms)
+        else:
+            return set(location.xy for location in self.locations)
+    
     @classmethod
     def initial_city(cls, world_name: str) -> Self:
         inst = cls(world_name, name="Cidade Inicial")

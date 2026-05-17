@@ -13,7 +13,6 @@ class Room:
     xy: tuple[int, int]
     room_type: str = "quarto"
     data_type: dict = field(default_factory=dict)
-    locked: bool = False
 
     @property
     def description(self) -> str:
@@ -31,8 +30,7 @@ class Room:
         return {
             "xy": list(self.xy),
             "room_type": self.room_type,
-            "data_type": self.data_type,
-            "locked": self.locked
+            "data_type": self.data_type
         }
     
     @classmethod
@@ -40,6 +38,5 @@ class Room:
         return cls(
             xy=tuple(d['xy']),
             room_type=d.get("room_type", "residencia"),
-            data_type=d.get("data_type", {}),
-            locked=d.get("locked", False)
+            data_type=d.get("data_type", {})
         )

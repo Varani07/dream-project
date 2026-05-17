@@ -20,6 +20,7 @@ class Location:
     data_type: dict = field(default_factory=dict)
     rooms: list[Room] = field(default_factory=list)
     rooms_count:tuple[int,int]=(0,0)
+    entry_room:tuple[int,int]=(0,0)
 
     @property
     def description(self) -> str:
@@ -62,7 +63,8 @@ class Location:
             "type": self.location_type,
             "data_type": self.data_type,
             "rooms": [comodo.to_dict() for comodo in self.rooms],
-            "rooms_count": list(self.rooms_count)
+            "rooms_count": list(self.rooms_count),
+            "entry_room": list(self.entry_room)
         }
     
     @classmethod
@@ -73,7 +75,8 @@ class Location:
             location_type=d.get("location_type", "residencia"),
             data_type=d.get("data_type", {}),
             rooms=[Room.from_dict(room) for room in d.get("rooms", [])],
-            rooms_count=tuple(d['rooms_count'])
+            rooms_count=tuple(d['rooms_count']),
+            entry_room=tuple(d['entry_room'])
         )
     
     @classmethod
@@ -101,8 +104,7 @@ class Location:
             rooms=[
                 Room(
                     (0,0),
-                    "sala",
-                    locked=True
+                    "sala"
                 ),
                 Room(
                     (1,0),

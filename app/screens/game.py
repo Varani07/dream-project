@@ -19,6 +19,7 @@ from app.screens.base import BaseScreen
 from app.widgets.status import PainelStatus
 from app.widgets.world_log import WorldLog
 from app.widgets.map import MiniMap
+from app.widgets.analyze import EnvironmentAnalysis
 
 from app.screens.mixins._movement import MovementMixin
 
@@ -29,30 +30,40 @@ class GameRunning(
     BINDINGS = [
         ("S", "save",  "Salvar"),
         ("H", "back_to_menu", "Menu"),
+        ("left", "move_left"),
+        ("right", "move_right"),
+        ("up", "move_up"),
+        ("down", "move_down")
     ]
 
     def __init__(self, world: World) -> None:
         super().__init__()
+        self.direction:str=""
+
         self.world = world
+
         player = world.main_player()
         assert player is not None
         self.player: Entity = player
+
+        self.world_knowledge = self.player.require(WorldKnowledgeComponent)
+        self.loc = self.player.require(LocationComponent)
+
         region = world.get_region(
-            self.player.require(LocationComponent).region_name
+            self.loc.region_name
         )
         assert region is not None
         self.world_region:Region=region
 
         self.time_manager = TimeManager(world, step_minutes=1)
+        self._time_auto_timer=None
+        self._time_play_timer=None
         
         event_bus.clear()
         register_systems(self.world)
 
     def compose_body(self) -> ComposeResult:
-        world_knowledge = self.player.require(WorldKnowledgeComponent)
-        loc = self.player.require(LocationComponent)
-
-        map = MiniMap(self.world_region, loc, world_knowledge, id="map")
+        map = MiniMap(self.world_region, self.loc, self.world_knowledge, id="map")
         status = PainelStatus(self.player, id="status")
 
         time_bar = Horizontal(
@@ -66,6 +77,8 @@ class GameRunning(
         log = WorldLog(id="world_log")
         log.add_event(f"[b cyan]Bem-vindo, {self.player.name}.[/]")
 
+        environment = EnvironmentAnalysis(id="analysis_panel")
+
         yield Vertical(
             Horizontal(
                 map,
@@ -77,6 +90,7 @@ class GameRunning(
                 id="top"
             ),
             Horizontal(
+                environment,
                 log,
                 id="middle"
             ),
@@ -87,9 +101,11 @@ class GameRunning(
         self._map = self.query_one("#map", MiniMap)
         self._status = self.query_one("#status", PainelStatus)
         self._log = self.query_one("#world_log", WorldLog)
+        self._analysis_panel = self.query_one("#analysis_panel", EnvironmentAnalysis)
 
         event_bus.subscribe_fn(WorldLogMessage, self._on_log_msg)
         self._update_status
+        self._analysis_panel.update_analysis_panel()
 
     @property
     def _update_status(self) -> None:
@@ -97,6 +113,9 @@ class GameRunning(
 
     def _on_log_msg(self, ev: WorldLogMessage) -> None:
         self._log.add_event(ev.text)
+
+    def on_button_pressed(self,event:Button.Pressed)->None:
+        self.notify(str(event.button.id), timeout=1)
 
     def action_save(self) -> None:
         from data import save_game
@@ -109,3 +128,15 @@ class GameRunning(
     def action_back_to_menu(self) -> None:
         from app.screens.menu import MainMenu
         self.app.push_screen(MainMenu())
+
+    def action_move_left(self)->None:
+        self._move("left") # type: ignore
+
+    def action_move_right(self)->None:
+        self._move("right") 
+
+    def action_move_up(self)->None:
+        self._move("up") 
+
+    def action_move_down(self)->None:
+        self._move("down")

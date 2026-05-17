@@ -173,7 +173,7 @@ Screen {
 
 #status {
     width: 100%;
-    height: 85%;
+    height: 88%;
     border: round $secondary;
     padding: 1 2;
     background: $panel;
@@ -187,6 +187,7 @@ Screen {
     text-style: none;
     border: tall $primary 60%;
     content-align: center middle;
+    background: $panel;
 }
 
 #btn_time_play {

@@ -34,3 +34,9 @@ class Entity:
     def all_components(self) -> dict[str, Component]:
         return {type(c).__name__: c for c in self._components.values()}
     
+    @property
+    def get_location_xy(self)->tuple[int,int]:
+        from core.entity.components import LocationComponent
+        location = self.require(LocationComponent)
+        return location.xy if not location.inside_location else location.room
+    

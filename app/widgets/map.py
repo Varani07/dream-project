@@ -15,7 +15,6 @@ class MiniMap(Grid):
         self.build_info(world_region,location_comp,world_knowledge_comp)
 
     def compose(self):
-        self.notify(f"{self.rows}, {self.cols}")
         for y in range(self.rows):
             for x in range(self.cols):
                 yield Button(self._label(x, y), id=f"cell_{x}_{y}", classes="cell_btn")
